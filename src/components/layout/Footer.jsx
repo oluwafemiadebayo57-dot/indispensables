@@ -22,10 +22,9 @@ export default function Footer() {
     <footer className="bg-brand-purple text-white mt-10 md:mt-24 relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-4xl bg-brand-orange/5 blur-3xl rounded-full pointer-events-none"></div>
 
-      {/* Reduced top/bottom padding on mobile (pt-10 pb-6) */}
       <div className="max-w-7xl mx-auto px-6 pt-10 pb-6 md:pt-16 md:pb-8 relative z-10 flex flex-col items-center text-center">
         
-        {/* BRANDING SECTION - Smaller Logo & Text on mobile */}
+        {/* BRANDING SECTION */}
         <div className="flex flex-col items-center mb-6 md:mb-10">
           <div className="bg-white p-1.5 md:p-2 rounded-xl md:rounded-2xl shadow-lg mb-3 md:mb-5">
             <img src="/logo.png" alt="Logo" className="h-10 md:h-20 object-contain" />
@@ -33,13 +32,12 @@ export default function Footer() {
           <h2 className="text-xl md:text-3xl font-extrabold tracking-wide mb-2">
             THE <span className="text-brand-orange">INDISPENSABLES</span>
           </h2>
-          {/* Hidden on mobile to save space */}
           <p className="hidden md:block text-white/60 text-base max-w-md mx-auto leading-relaxed">
             RCCG Ondo Province 11 Teen Affairs Ministry. Raising a generation of teenagers indispensable to the Kingdom.
           </p>
         </div>
 
-        {/* LINK GRID - Tighter vertical gaps on mobile */}
+        {/* LINK GRID */}
         <div className="w-full max-w-2xl border-y border-white/10 py-5 md:py-8 mb-6 md:mb-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-y-2 md:gap-y-4 gap-x-2 text-xs md:text-sm font-medium text-white/80">
             <Link to="/about" className="hover:text-brand-orange">About Us</Link>
@@ -53,7 +51,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* CONTACT BUTTONS - Shorter height on mobile */}
+        {/* CONTACT BUTTONS */}
         <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 mb-6 md:mb-10 w-full">
           <a 
             href="mailto:theindispensables11@gmail.com" 
@@ -76,10 +74,14 @@ export default function Footer() {
           )}
         </div>
 
-        {/* COPYRIGHT - Smaller Text */}
-        <div className="text-[10px] md:text-xs text-white/40 tracking-wider uppercase font-medium">
-          <p>&copy; {new Date().getFullYear()} RCCG Ondo Province 11 Teen Affairs.</p>
-          <p className="mt-0.5">All rights reserved.</p>
+        {/* COPYRIGHT & STAFF LOGIN */}
+        <div className="flex flex-col items-center gap-2 text-[10px] md:text-xs text-white/40 tracking-wider uppercase font-medium">
+          <p>&copy; {new Date().getFullYear()} RCCG Ondo Province 11 Teen Affairs. All rights reserved.</p>
+          
+          {/* Subtle Staff Login Link */}
+          <Link to="/login" className="hover:text-brand-orange transition-colors">
+            Staff / Executive Login
+          </Link>
         </div>
         
       </div>

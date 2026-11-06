@@ -6,7 +6,7 @@ const links = [
   { to: '/',              label: 'Home' },
   { to: '/about',         label: 'About' },
   { to: '/events',        label: 'Events' },
-  { to: '/register-teen', label: 'Register as Teen' },
+  { to: '/register-teen', label: 'Register Teen' },
   { to: '/departments',   label: 'Departments' },
   { to: '/prayer-request',label: 'Prayer' },
   { to: '/complaints',    label: 'Complaints' },
@@ -27,18 +27,17 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
         
         {/* LOGO & TITLE */}
-        <Link to="/" className="flex items-center gap-3">
-          {/* Logo gets a white background container so the transparent edges look clean */}
-          <div className="bg-white p-1 rounded-md h-12 w-auto flex items-center justify-center">
-            <img src="/logo.png" alt="The Indispensables Logo" className="h-full object-contain" />
+        <Link to="/" className="flex items-center gap-2 md:gap-3">
+          <div className="bg-white p-1 rounded-md h-10 w-10 md:h-12 md:w-12 flex items-center justify-center">
+            <img src="/logo.png" alt="The Indispensables Logo" className="h-full w-full object-contain" />
           </div>
-          <span className="font-semibold tracking-wide text-sm md:text-base max-w-[200px] md:max-w-none leading-tight">
+          <span className="font-semibold tracking-wide text-xs md:text-base max-w-[150px] md:max-w-none leading-tight">
             Ondo Province 11 <br className="md:hidden" /> Teen Affairs
           </span>
         </Link>
 
         {/* DESKTOP NAVIGATION */}
-        <nav className="hidden md:flex items-center gap-5 text-sm font-medium">
+        <nav className="hidden lg:flex items-center gap-5 text-sm font-medium">
           {links.map(l => (
             <NavLink 
               key={l.to} 
@@ -50,21 +49,18 @@ export default function Navbar() {
             </NavLink>
           ))}
           
-          {user ? (
+          {/* Only show Dashboard/Logout if they are logged in. Hide "Login" entirely */}
+          {user && (
             <div className="flex items-center gap-3 pl-3 border-l border-white/20">
               <Link to={adminHome} className="hover:text-brand-orange transition-colors">Dashboard</Link>
               <button onClick={logout} className="text-brand-orange hover:text-white transition-colors">Logout</button>
             </div>
-          ) : (
-            <Link to="/login" className="bg-brand-orange text-white px-4 py-1.5 rounded-md font-semibold hover:bg-orange-500 transition-colors shadow-sm">
-              Login
-            </Link>
           )}
         </nav>
 
         {/* MOBILE MENU BUTTON */}
         <button 
-          className="md:hidden text-2xl" 
+          className="lg:hidden text-2xl p-2" 
           onClick={() => setOpen(!open)} 
           aria-label="menu"
         >
@@ -74,28 +70,25 @@ export default function Navbar() {
 
       {/* MOBILE NAVIGATION DROPDOWN */}
       {open && (
-        <div className="md:hidden px-4 pb-4 flex flex-col gap-3 bg-brand-purple border-t border-white/10 text-sm">
+        <div className="lg:hidden px-4 pb-4 flex flex-col gap-3 bg-brand-purple border-t border-white/10 text-sm">
           {links.map(l => (
             <NavLink 
               key={l.to} 
               to={l.to} 
               end 
               onClick={() => setOpen(false)} 
-              className="py-1 hover:text-brand-orange"
+              className="py-2 border-b border-white/5 hover:text-brand-orange"
             >
               {l.label}
             </NavLink>
           ))}
-          <div className="border-t border-white/10 pt-3 mt-1 flex flex-col gap-3">
-            {user ? (
-              <>
-                <Link to={adminHome} onClick={() => setOpen(false)} className="hover:text-brand-orange">Dashboard</Link>
-                <button onClick={() => { logout(); setOpen(false); }} className="text-left text-brand-orange font-semibold">Logout</button>
-              </>
-            ) : (
-              <Link to="/login" onClick={() => setOpen(false)} className="text-brand-orange font-semibold">Login to Dashboard</Link>
-            )}
-          </div>
+          
+          {user && (
+            <div className="pt-2 flex flex-col gap-3">
+              <Link to={adminHome} onClick={() => setOpen(false)} className="font-bold hover:text-brand-orange">Dashboard</Link>
+              <button onClick={() => { logout(); setOpen(false); }} className="text-left text-brand-orange font-semibold">Logout</button>
+            </div>
+          )}
         </div>
       )}
     </header>
