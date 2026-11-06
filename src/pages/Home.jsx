@@ -13,6 +13,7 @@ export default function Home() {
         const snap = await getDocs(collection(db, 'events'));
         const events = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
+        // Filter for upcoming events with a valid targetDate, then sort by soonest
         const upcoming = events
           .filter(e => e.targetDate && new Date(e.targetDate) > new Date())
           .sort((a, b) => new Date(a.targetDate) - new Date(b.targetDate));
@@ -62,10 +63,14 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              {/* UPDATED BUTTON TEXT HERE */}
-              <Link to="/events" className="bg-brand-orange text-white px-8 py-4 rounded-xl font-bold hover:bg-orange-500 transition-all shadow-xl hover:-translate-y-1 text-center w-full sm:w-auto">
-                Register for December Program
+              {/* SMART REGISTRATION BUTTON */}
+              <Link 
+                to={nextEvent ? `/events/${nextEvent.slug}` : '/events'} 
+                className="bg-brand-orange text-white px-8 py-4 rounded-xl font-bold hover:bg-orange-500 transition-all shadow-xl hover:-translate-y-1 text-center w-full sm:w-auto"
+              >
+                {nextEvent ? `Register for ${nextEvent.title}` : 'View Upcoming Events'}
               </Link>
+              
               <Link to="/about" className="bg-white/10 backdrop-blur-md border border-white/30 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/20 transition-all text-center w-full sm:w-auto">
                 Meet the Executives
               </Link>
