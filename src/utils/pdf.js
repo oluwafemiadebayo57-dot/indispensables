@@ -1,17 +1,19 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
+// ==========================================
+// 1. REPORT PDF
+// ==========================================
 export function generateReportPDF(report) {
   const doc = new jsPDF();
   
-  // --- HEADER / LETTERHEAD ---
   doc.setFontSize(18);
-  doc.setTextColor(107, 45, 145); // Brand Purple
+  doc.setTextColor(107, 45, 145);
   doc.setFont('helvetica', 'bold');
   doc.text("RCCG ONDO PROVINCE 11 TEEN AFFAIRS", 105, 20, null, null, "center");
   
   doc.setFontSize(14);
-  doc.setTextColor(242, 140, 40); // Brand Orange
+  doc.setTextColor(242, 140, 40);
   doc.text("THE INDISPENSABLES", 105, 28, null, null, "center");
   
   doc.setFontSize(10);
@@ -19,12 +21,10 @@ export function generateReportPDF(report) {
   doc.setFont('helvetica', 'normal');
   doc.text("Official Departmental Report", 105, 35, null, null, "center");
   
-  // Divider Line
   doc.setDrawColor(107, 45, 145);
   doc.setLineWidth(0.5);
   doc.line(20, 40, 190, 40);
 
-  // --- REPORT METADATA ---
   doc.setFontSize(11);
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
@@ -52,37 +52,21 @@ export function generateReportPDF(report) {
   doc.setFont('helvetica', 'normal');
   doc.text(`${new Date(report.createdAt).toLocaleDateString()}`, 55, 78);
 
-  // --- BODY SECTIONS ---
   let currentY = 90;
 
   const addSection = (title, content) => {
     if (!content) return;
-    
-    // Check if we need a new page
-    if (currentY > 250) {
-      doc.addPage();
-      currentY = 20;
-    }
-
+    if (currentY > 250) { doc.addPage(); currentY = 20; }
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(107, 45, 145);
     doc.text(title, 20, currentY);
     currentY += 7;
-
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(50, 50, 50);
-    
-    // Split text into lines to fit page width
     const splitText = doc.splitTextToSize(content, 170);
-    
-    // Check if text fits on current page, if not, add page
-    if (currentY + (splitText.length * 6) > 280) {
-      doc.addPage();
-      currentY = 20;
-    }
-    
+    if (currentY + (splitText.length * 6) > 280) { doc.addPage(); currentY = 20; }
     doc.text(splitText, 20, currentY);
-    currentY += (splitText.length * 6) + 8; // Add spacing
+    currentY += (splitText.length * 6) + 8; 
   };
 
   addSection("1. MEETINGS HELD / ACTIVITIES", report.meetingsAndActivities);
@@ -98,7 +82,6 @@ export function generateReportPDF(report) {
   addSection("5. PRAYER POINTS", report.prayerPoints);
   addSection("6. EXTRA NOTES", report.extraNotes);
 
-  // --- FOOTER ---
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -108,22 +91,22 @@ export function generateReportPDF(report) {
     doc.text("RCCG Ondo Province 11 - Indispensables Teens Ministry", 105, 295, null, null, "center");
   }
 
-  // Save the PDF
   doc.save(`Report - ${report.department} - ${report.period}.pdf`);
 }
-// ... existing generateReportPDF function ...
 
+// ==========================================
+// 2. EVENT PLAN PDF
+// ==========================================
 export function generatePlanPDF(plan) {
   const doc = new jsPDF();
   
-  // --- HEADER ---
   doc.setFontSize(18);
-  doc.setTextColor(107, 45, 145); // Brand Purple
+  doc.setTextColor(107, 45, 145);
   doc.setFont('helvetica', 'bold');
   doc.text("RCCG ONDO PROVINCE 11 TEEN AFFAIRS", 105, 20, null, null, "center");
   
   doc.setFontSize(14);
-  doc.setTextColor(242, 140, 40); // Brand Orange
+  doc.setTextColor(242, 140, 40);
   doc.text("EVENT PROPOSAL & BUDGET PLAN", 105, 28, null, null, "center");
   
   doc.setFontSize(10);
@@ -135,7 +118,6 @@ export function generatePlanPDF(plan) {
   doc.setLineWidth(0.5);
   doc.line(20, 40, 190, 40);
 
-  // --- METADATA ---
   doc.setFontSize(11);
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
@@ -162,9 +144,8 @@ export function generatePlanPDF(plan) {
   doc.text(`Status:`, 20, 78);
   doc.setTextColor(plan.status === 'approved' ? 0 : 200, plan.status === 'approved' ? 128 : 0, 0);
   doc.text(`${plan.status.toUpperCase()}`, 55, 78);
-  doc.setTextColor(0, 0, 0); // reset to black
+  doc.setTextColor(0, 0, 0);
 
-  // --- BODY ---
   let currentY = 90;
 
   const addSection = (title, content) => {
@@ -189,7 +170,6 @@ export function generatePlanPDF(plan) {
   addSection("3. UNIFORM / MATERIAL REQUIREMENTS", plan.uniforms);
   addSection("4. OTHER LOGISTICS / NEEDS", plan.otherNeeds);
 
-  // --- FOOTER ---
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -200,4 +180,70 @@ export function generatePlanPDF(plan) {
   }
 
   doc.save(`Plan - ${plan.eventName} - ${plan.department}.pdf`);
+}
+
+// ==========================================
+// 3. E-TICKET PDF (NEW)
+// ==========================================
+export function generateTicketPDF(registration, eventData) {
+  // Create a custom ticket size (200x300 points)
+  const doc = new jsPDF({ format: [200, 300] });
+  
+  // Background
+  doc.setFillColor(107, 45, 145);
+  doc.rect(0, 0, 200, 300, 'F');
+  
+  // Header
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.text("THE INDISPENSABLES", 100, 30, null, null, "center");
+  
+  doc.setFontSize(14);
+  doc.setTextColor(242, 140, 40);
+  doc.text("OFFICIAL E-TICKET", 100, 40, null, null, "center");
+  
+  // Event Details
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.text(eventData.title, 100, 70, null, null, "center");
+  
+  doc.setFontSize(10);
+  doc.text(`DATE: ${eventData.displayDate}`, 100, 85, null, null, "center");
+  doc.text(`LOCATION: ${eventData.location}`, 100, 95, null, null, "center");
+  
+  // Divider
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(0.5);
+  doc.line(20, 110, 180, 110);
+  
+  // Attendee Details
+  doc.setFontSize(12);
+  doc.text("ATTENDEE DETAILS", 100, 130, null, null, "center");
+  
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text(registration.fullName.toUpperCase(), 100, 150, null, null, "center");
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`PHONE: ${registration.phone}`, 100, 165, null, null, "center");
+  doc.text(`PARISH: ${registration.parish}`, 100, 175, null, null, "center");
+  
+  // Unique Check-in Code
+  const checkInCode = registration.id || 'TEMP-ID';
+  
+  // White box for the code
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(20, 200, 160, 50, 10, 10, 'F');
+  
+  doc.setTextColor(107, 45, 145);
+  doc.setFontSize(10);
+  doc.text("UNIQUE CHECK-IN CODE (SHOW AT VENUE)", 100, 215, null, null, "center");
+  
+  doc.setFontSize(14); 
+  doc.setFont('helvetica', 'bold');
+  doc.text(checkInCode, 100, 235, null, null, "center");
+  
+  doc.save(`Ticket-${registration.fullName.replace(/\s+/g, '-')}.pdf`);
 }
