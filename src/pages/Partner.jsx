@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { notifyPresidency } from '../utils/notifications';
 
 export default function Partner() {
   const [formData, setFormData] = useState({ name: '', organization: '', email: '', phone: '', type: 'Financial', message: '' });
@@ -16,6 +17,13 @@ export default function Partner() {
         status: 'new',
         createdAt: new Date().toISOString()
       });
+
+      // Notify Presidency
+      await notifyPresidency(
+        'New Partner Request', 
+        `A new partnership request has been submitted by <strong>${formData.name}</strong> (${formData.type}).`
+      );
+
       setSubmitted(true);
     } catch (error) {
       console.error("Error submitting partner form:", error);

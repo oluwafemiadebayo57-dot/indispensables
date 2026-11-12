@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
+import { notifyPresidency } from '../../utils/notifications';
 
 export default function ReportSubmit() {
   const { user } = useAuth();
@@ -35,6 +36,13 @@ export default function ReportSubmit() {
         status: 'submitted',
         createdAt: new Date().toISOString()
       });
+
+      // Notify Presidency
+      await notifyPresidency(
+        'New Report Submitted', 
+        `<strong>${user.name || user.email}</strong> from the <strong>${formData.department}</strong> department has submitted a ${formData.type} report for ${formData.period}.`
+      );
+
       alert('Report submitted successfully!');
       navigate('/portal/reports');
     } catch (error) {
@@ -80,7 +88,7 @@ export default function ReportSubmit() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Meetings Held & Activities *</label>
-            <textarea required rows="3" name="meetingsAndActivities" value={formData.meetingsAndActivities} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3" placeholder="Summarize meetings held, attendance, and activities during this period..."></textarea>
+            <textarea required rows="3" name="meetingsAndActivities" value={formData.meetingsAndActivities} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3" placeholder="Summarize meetings held, attendance, and activities..."></textarea>
           </div>
 
           <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 space-y-4">
@@ -97,7 +105,7 @@ export default function ReportSubmit() {
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-1">Financial Notes</label>
-              <input type="text" name="financialNotes" value={formData.financialNotes} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2" placeholder="e.g. Used for printing flyers and transport..." />
+              <input type="text" name="financialNotes" value={formData.financialNotes} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2" placeholder="e.g. Used for printing flyers..." />
             </div>
           </div>
 
@@ -114,7 +122,7 @@ export default function ReportSubmit() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Prayer Points</label>
-            <textarea rows="2" name="prayerPoints" value={formData.prayerPoints} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3" placeholder="What should the province pray about regarding your department?"></textarea>
+            <textarea rows="2" name="prayerPoints" value={formData.prayerPoints} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3" placeholder="What should the province pray about?"></textarea>
           </div>
 
           <button disabled={busy} type="submit" className="w-full bg-brand-purple text-white py-4 rounded-xl font-bold text-lg hover:bg-brand-purple/90 transition shadow-lg disabled:opacity-50">

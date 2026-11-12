@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
+import { notifyPresidency } from '../../utils/notifications';
 
 export default function PlanSubmit() {
   const { user } = useAuth();
@@ -32,6 +33,13 @@ export default function PlanSubmit() {
         status: 'pending',
         createdAt: new Date().toISOString()
       });
+
+      // Notify Presidency
+      await notifyPresidency(
+        'New Event Plan Submitted', 
+        `<strong>${user.name || user.email}</strong> (${formData.department}) has submitted a plan for <strong>${formData.eventName}</strong> with a budget of ₦${formData.totalBudget}.`
+      );
+
       alert('Event Plan submitted successfully!');
       navigate('/portal/reports');
     } catch (error) {
@@ -50,7 +58,7 @@ export default function PlanSubmit() {
         <div className="mb-6 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-brand-purple">Submit Event Plan</h1>
-            <p className="text-gray-500">Propose activities, budgets, and material needs for upcoming events.</p>
+            <p className="text-gray-500">Propose activities, budgets, and material needs.</p>
           </div>
           <Link to="/portal/reports" className="text-brand-orange font-bold hover:underline">&larr; Back</Link>
         </div>
@@ -87,18 +95,18 @@ export default function PlanSubmit() {
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-1">Budget Breakdown *</label>
-              <textarea required rows="3" name="budgetBreakdown" value={formData.budgetBreakdown} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2" placeholder="e.g. 1. Flyers - ₦5,000&#10;2. Transport - ₦20,000&#10;3. Refreshments - ₦25,000"></textarea>
+              <textarea required rows="3" name="budgetBreakdown" value={formData.budgetBreakdown} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2" placeholder="e.g. 1. Flyers - ₦5,000&#10;2. Transport - ₦20,000"></textarea>
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Uniform / Material Requirements</label>
-            <textarea rows="2" name="uniforms" value={formData.uniforms} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3" placeholder="e.g. 20 Departmental Polos (Size M/L), 5 Banners..."></textarea>
+            <textarea rows="2" name="uniforms" value={formData.uniforms} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3" placeholder="e.g. 20 Departmental Polos..."></textarea>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Other Logistics / Needs</label>
-            <textarea rows="2" name="otherNeeds" value={formData.otherNeeds} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3" placeholder="e.g. Sound system rental, approval for venue..."></textarea>
+            <textarea rows="2" name="otherNeeds" value={formData.otherNeeds} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3" placeholder="e.g. Sound system rental..."></textarea>
           </div>
 
           <button disabled={busy} type="submit" className="w-full bg-brand-orange text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-500 transition shadow-lg disabled:opacity-50">

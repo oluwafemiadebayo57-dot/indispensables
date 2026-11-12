@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { generateTrackingCode } from '../utils/ids';
+import { notifyPresidency } from '../utils/notifications';
 
 export default function Complaints() {
   const [formData, setFormData] = useState({ name: '', contact: '', category: 'Welfare', subject: '', body: '' });
@@ -14,13 +15,19 @@ export default function Complaints() {
     const code = generateTrackingCode();
     
     try {
-      // We use setDoc with the tracking code as the Document ID
       await setDoc(doc(db, 'complaints', code), {
         ...formData,
         trackingCode: code,
         status: 'open',
         createdAt: new Date().toISOString()
       });
+
+      // Notify Presidency
+      await notifyPresidency(
+        'New Complaint Filed', 
+        `A new complaint regarding "<strong>${formData.subject}</strong>" has been submitted. Tracking Code: ${code}`
+      );
+
       setTrackingCode(code);
     } catch (error) {
       console.error("Error submitting complaint:", error);
@@ -72,7 +79,7 @@ export default function Complaints() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Phone/Email for Updates (Optional)</label>
-              <input type="text" onChange={(e) => setFormData({...formData, contact: e.target.value})} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
+              <input type="text" onChange={(e) => setFormData({...formData, contact: e.target.value})} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" placeholder="So we can notify you when resolved" />
             </div>
           </div>
 
