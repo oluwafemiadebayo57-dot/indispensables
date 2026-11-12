@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import AdminNav from '../../components/layout/AdminNav';
+import { sendEmail } from '../../utils/sendEmail'; // <-- Import email utility
 
 export default function Registrations() {
   const [events, setEvents] = useState([]);
@@ -9,6 +10,7 @@ export default function Registrations() {
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isEmailing, setIsEmailing] = useState(false);
 
   // Walk-in Modal State
   const [showWalkIn, setShowWalkIn] = useState(false);
@@ -59,23 +61,64 @@ export default function Registrations() {
     setWalkInBusy(true);
     try {
       const time = new Date().toISOString();
-      // Create the registration AND mark them as attended immediately
       await addDoc(collection(db, 'registrations'), {
         ...walkInData,
         eventId: selectedEventId,
         attended: true,
         checkInTime: time,
         createdAt: time,
-        isWalkIn: true // Flag to know they registered at the venue
+        isWalkIn: true
       });
       
       setShowWalkIn(false);
       setWalkInData({ fullName: '', phone: '', gender: '', parish: '', guardianName: '', guardianPhone: '' });
-      fetchRegistrations(); // Refresh list
+      fetchRegistrations();
     } catch (error) {
       alert("Failed to register walk-in: " + error.message);
     } finally {
       setWalkInBusy(false);
+    }
+  };
+
+  const handleEmailAbsentees = async () => {
+    const absentees = registrations.filter(r => !r.attended && r.email);
+    
+    if (absentees.length === 0) {
+      alert("There are no absentees with valid emails to contact.");
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to send a follow-up email to ${absentees.length} absentees?`;
+    if (!window.confirm(confirmMessage)) return;
+
+    setIsEmailing(true);
+    const eventName = events.find(e => e.id === selectedEventId)?.title || "our recent event";
+
+    try {
+      for (const person of absentees) {
+        await sendEmail({
+          to: person.email,
+          subject: `We missed you at ${eventName}!`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+              <h2 style="color: #6B2D91;">RCCG Ondo Province 11 Teen Affairs</h2>
+              <p>Hi <strong>${person.fullName}</strong>,</p>
+              <p>We noticed you registered for <strong>${eventName}</strong> but couldn't make it. We missed having you there!</p>
+              <p>The program was a huge success, and we would love to share the highlights with you. If you need prayer or just want to talk, please reply to this email or reach out to your parish teen coordinator.</p>
+              <p>We hope to see you at our next event!</p>
+              <br/>
+              <p>God bless you,</p>
+              <p>The Indispensables Team</p>
+            </div>
+          `
+        });
+      }
+      alert(`Successfully sent follow-up emails to ${absentees.length} absentees.`);
+    } catch (error) {
+      console.error("Error sending absentee emails:", error);
+      alert("An error occurred while sending emails. Some may not have been delivered.");
+    } finally {
+      setIsEmailing(false);
     }
   };
 
@@ -102,6 +145,11 @@ export default function Registrations() {
     r.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     r.phone?.includes(searchTerm)
   );
+
+  // Stats
+  const totalReg = registrations.length;
+  const totalAttended = registrations.filter(r => r.attended).length;
+  const totalAbsent = totalReg - totalAttended;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 relative">
@@ -136,6 +184,14 @@ export default function Registrations() {
             </button>
 
             <button 
+              onClick={handleEmailAbsentees}
+              disabled={!selectedEventId || totalAbsent === 0 || isEmailing}
+              className="bg-blue-600 text-white px-5 py-3 rounded-lg font-bold hover:bg-blue-700 transition disabled:opacity-50 whitespace-nowrap flex items-center gap-2"
+            >
+              {isEmailing ? 'Sending...' : `✉️ Email Absentees (${totalAbsent})`}
+            </button>
+
+            <button 
               onClick={downloadCSV}
               disabled={registrations.length === 0}
               className="bg-green-600 text-white px-5 py-3 rounded-lg font-bold hover:bg-green-700 transition disabled:opacity-50 whitespace-nowrap"
@@ -158,14 +214,30 @@ export default function Registrations() {
           </div>
         ) : (
           <>
-            <div className="mb-6">
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
               <input 
                 type="text"
-                placeholder="🔍 Search by name or phone number to check in..."
+                placeholder="🔍 Search by name or phone number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full md:w-1/2 border-2 border-brand-purple/20 rounded-xl p-4 text-lg focus:ring-2 focus:ring-brand-purple focus:outline-none shadow-sm bg-white"
               />
+              <div className="flex gap-4 items-center bg-white px-6 py-3 rounded-xl shadow-sm border border-gray-100">
+                <div className="text-center">
+                  <p className="text-xs text-gray-500 font-bold uppercase">Registered</p>
+                  <p className="text-xl font-bold text-gray-800">{totalReg}</p>
+                </div>
+                <div className="w-px h-8 bg-gray-200"></div>
+                <div className="text-center">
+                  <p className="text-xs text-green-600 font-bold uppercase">Attended</p>
+                  <p className="text-xl font-bold text-green-600">{totalAttended}</p>
+                </div>
+                <div className="w-px h-8 bg-gray-200"></div>
+                <div className="text-center">
+                  <p className="text-xs text-red-500 font-bold uppercase">Absent</p>
+                  <p className="text-xl font-bold text-red-500">{totalAbsent}</p>
+                </div>
+              </div>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -184,6 +256,7 @@ export default function Registrations() {
                   
                   <div className="text-sm text-gray-600 mb-4">
                     <p>⛪ {reg.parish}</p>
+                    <p className="text-xs text-gray-400 mt-1">✉️ {reg.email}</p>
                     {reg.attended && reg.checkInTime && (
                       <p className="text-green-600 font-bold mt-2 text-xs">
                         Checked in at: {new Date(reg.checkInTime).toLocaleTimeString()}
@@ -245,6 +318,10 @@ export default function Registrations() {
                 <input required type="text" value={walkInData.parish} onChange={e => setWalkInData({...walkInData, parish: e.target.value})} className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-brand-orange outline-none" />
               </div>
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Email Address (Optional)</label>
+                  <input type="email" value={walkInData.email || ''} onChange={e => setWalkInData({...walkInData, email: e.target.value})} className="w-full border rounded-lg p-2 text-sm outline-none" />
+                </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Guardian Name</label>
                   <input type="text" value={walkInData.guardianName} onChange={e => setWalkInData({...walkInData, guardianName: e.target.value})} className="w-full border rounded-lg p-2 text-sm outline-none" />
