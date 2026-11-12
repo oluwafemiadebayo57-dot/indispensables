@@ -17,7 +17,7 @@ export default function EventDetail() {
   const [submitted, setSubmitted] = useState(false);
   const [regId, setRegId] = useState('');
   const [busy, setBusy] = useState(false);
-  const [emailStatus, setEmailStatus] = useState(''); // To show if email is sending
+  const [emailStatus, setEmailStatus] = useState(''); 
 
   useEffect(() => {
     async function fetchEvent() {
@@ -57,31 +57,29 @@ export default function EventDetail() {
       // 2. Generate PDF Base64
       const ticketBase64 = getTicketBase64({ id: newRegId, ...formData }, eventData);
 
-      // 3. Send Email (if they provided an email address)
-      if (formData.email) {
-        setEmailStatus('Sending ticket to your email...');
-        await sendEmail({
-          to: formData.email,
-          subject: `Your E-Ticket for ${eventData.title}`,
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; text-align: center;">
-              <h2 style="color: #6B2D91;">Registration Confirmed!</h2>
-              <p>Hi <strong>${formData.fullName}</strong>,</p>
-              <p>You are officially registered for <strong>${eventData.title}</strong>.</p>
-              <p>Please find your official E-Ticket attached to this email. You can print it or show the PDF on your phone at the venue for check-in.</p>
-              <br/>
-              <p style="color: #F28C28; font-weight: bold;">The Indispensables Team</p>
-            </div>
-          `,
-          attachments: [
-            {
-              filename: `Ticket-${formData.fullName.replace(/\s+/g, '-')}.pdf`,
-              content: ticketBase64,
-            }
-          ]
-        });
-        setEmailStatus('Ticket sent to your email!');
-      }
+      // 3. Send Email (Email is now compulsory, so we don't need to check if it exists)
+      setEmailStatus('Sending ticket to your email...');
+      await sendEmail({
+        to: formData.email,
+        subject: `Your E-Ticket for ${eventData.title}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; text-align: center;">
+            <h2 style="color: #6B2D91;">Registration Confirmed!</h2>
+            <p>Hi <strong>${formData.fullName}</strong>,</p>
+            <p>You are officially registered for <strong>${eventData.title}</strong>.</p>
+            <p>Please find your official E-Ticket attached to this email. You can print it or show the PDF on your phone at the venue for check-in.</p>
+            <br/>
+            <p style="color: #F28C28; font-weight: bold;">The Indispensables Team</p>
+          </div>
+        `,
+        attachments: [
+          {
+            filename: `Ticket-${formData.fullName.replace(/\s+/g, '-')}.pdf`,
+            content: ticketBase64,
+          }
+        ]
+      });
+      setEmailStatus('Ticket sent to your email!');
 
       setSubmitted(true);
       window.scrollTo(0, 0);
@@ -211,8 +209,9 @@ export default function EventDetail() {
 
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                      <input type="email" name="email" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
+                      {/* ADDED * AND required HERE */}
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+                      <input required type="email" name="email" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Home Parish (Province 11) *</label>
