@@ -1,11 +1,11 @@
-export async function sendEmail({ to, subject, html }) {
+export async function sendEmail({ to, subject, html, attachments }) {
   try {
     const response = await fetch('/api/send-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ to, subject, html }),
+      body: JSON.stringify({ to, subject, html, attachments }),
     });
 
     const data = await response.json();

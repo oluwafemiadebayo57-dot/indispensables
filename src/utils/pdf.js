@@ -247,3 +247,60 @@ export function generateTicketPDF(registration, eventData) {
   
   doc.save(`Ticket-${registration.fullName.replace(/\s+/g, '-')}.pdf`);
 }
+// Add this at the bottom of src/utils/pdf.js
+export function getTicketBase64(registration, eventData) {
+  const doc = new jsPDF({ format: [200, 300] });
+  
+  doc.setFillColor(107, 45, 145);
+  doc.rect(0, 0, 200, 300, 'F');
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.text("THE INDISPENSABLES", 100, 30, null, null, "center");
+  
+  doc.setFontSize(14);
+  doc.setTextColor(242, 140, 40);
+  doc.text("OFFICIAL E-TICKET", 100, 40, null, null, "center");
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.text(eventData.title, 100, 70, null, null, "center");
+  
+  doc.setFontSize(10);
+  doc.text(`DATE: ${eventData.displayDate}`, 100, 85, null, null, "center");
+  doc.text(`LOCATION: ${eventData.location}`, 100, 95, null, null, "center");
+  
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(0.5);
+  doc.line(20, 110, 180, 110);
+  
+  doc.setFontSize(12);
+  doc.text("ATTENDEE DETAILS", 100, 130, null, null, "center");
+  
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text(registration.fullName.toUpperCase(), 100, 150, null, null, "center");
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`PHONE: ${registration.phone}`, 100, 165, null, null, "center");
+  doc.text(`PARISH: ${registration.parish}`, 100, 175, null, null, "center");
+  
+  const checkInCode = registration.id || 'TEMP-ID';
+  
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(20, 200, 160, 50, 10, 10, 'F');
+  
+  doc.setTextColor(107, 45, 145);
+  doc.setFontSize(10);
+  doc.text("UNIQUE CHECK-IN CODE", 100, 215, null, null, "center");
+  
+  doc.setFontSize(14); 
+  doc.setFont('helvetica', 'bold');
+  doc.text(checkInCode, 100, 235, null, null, "center");
+  
+  // Output as Base64 string (stripping the data URI prefix for Resend)
+  const pdfBase64 = doc.output('datauristring');
+  return pdfBase64.split(',')[1]; 
+}

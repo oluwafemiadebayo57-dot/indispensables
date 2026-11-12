@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import Countdown from '../components/ui/Countdown';
-import { generateTicketPDF } from '../utils/pdf';
+import { generateTicketPDF, getTicketBase64 } from '../utils/pdf';
+import { sendEmail } from '../utils/sendEmail';
 
 export default function EventDetail() {
   const { slug } = useParams();
@@ -14,8 +15,9 @@ export default function EventDetail() {
     fullName: '', gender: '', dob: '', phone: '', email: '', parish: '', guardianName: '', guardianPhone: '', medicalNotes: '', consent: false
   });
   const [submitted, setSubmitted] = useState(false);
-  const [regId, setRegId] = useState(''); // Stores the Firestore Document ID for the ticket
+  const [regId, setRegId] = useState('');
   const [busy, setBusy] = useState(false);
+  const [emailStatus, setEmailStatus] = useState(''); // To show if email is sending
 
   useEffect(() => {
     async function fetchEvent() {
@@ -37,7 +39,9 @@ export default function EventDetail() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setBusy(true);
+    
     try {
+      // 1. Save to Firestore
       const docRef = await addDoc(collection(db, 'registrations'), {
         ...formData,
         eventId: eventData.id,
@@ -46,7 +50,39 @@ export default function EventDetail() {
         checkInTime: null,
         createdAt: new Date().toISOString()
       });
-      setRegId(docRef.id); // Save the ID to generate the ticket
+      
+      const newRegId = docRef.id;
+      setRegId(newRegId);
+      
+      // 2. Generate PDF Base64
+      const ticketBase64 = getTicketBase64({ id: newRegId, ...formData }, eventData);
+
+      // 3. Send Email (if they provided an email address)
+      if (formData.email) {
+        setEmailStatus('Sending ticket to your email...');
+        await sendEmail({
+          to: formData.email,
+          subject: `Your E-Ticket for ${eventData.title}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; text-align: center;">
+              <h2 style="color: #6B2D91;">Registration Confirmed!</h2>
+              <p>Hi <strong>${formData.fullName}</strong>,</p>
+              <p>You are officially registered for <strong>${eventData.title}</strong>.</p>
+              <p>Please find your official E-Ticket attached to this email. You can print it or show the PDF on your phone at the venue for check-in.</p>
+              <br/>
+              <p style="color: #F28C28; font-weight: bold;">The Indispensables Team</p>
+            </div>
+          `,
+          attachments: [
+            {
+              filename: `Ticket-${formData.fullName.replace(/\s+/g, '-')}.pdf`,
+              content: ticketBase64,
+            }
+          ]
+        });
+        setEmailStatus('Ticket sent to your email!');
+      }
+
       setSubmitted(true);
       window.scrollTo(0, 0);
     } catch (error) {
@@ -65,26 +101,28 @@ export default function EventDetail() {
   if (loading) return <div className="min-h-screen flex items-center justify-center text-brand-purple font-bold">Loading event...</div>;
   if (!eventData) return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold">Event not found.</div>;
 
-  // Calculate Event Status
   const eventDate = new Date(eventData.targetDate);
   const now = new Date();
-  const isPast = eventDate < now && (now.getTime() - eventDate.getTime() > 24 * 60 * 60 * 1000); // More than 24 hours ago
+  const isPast = eventDate < now && (now.getTime() - eventDate.getTime() > 24 * 60 * 60 * 1000);
   const isOngoing = !isPast && eventDate <= now;
 
-  // Success Screen
   if (submitted) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center bg-gray-50 px-4 py-12">
         <div className="bg-white p-10 rounded-3xl shadow-xl max-w-lg w-full text-center border-t-8 border-green-500">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-3xl font-bold text-brand-purple mb-2">Registration Successful!</h2>
-          <p className="text-gray-600 mb-8">
+          <p className="text-gray-600 mb-4">
             Thank you, <strong>{formData.fullName}</strong>. You are officially registered for <strong>{eventData.title}</strong>.
           </p>
           
+          {emailStatus && (
+            <p className="text-sm font-bold text-brand-purple mb-6 bg-brand-purple/5 p-3 rounded-lg">{emailStatus}</p>
+          )}
+
           <div className="bg-brand-purple/5 border border-brand-purple/20 rounded-2xl p-6 mb-8">
-            <h3 className="font-bold text-brand-purple mb-2">Your E-Ticket is Ready</h3>
-            <p className="text-sm text-gray-600 mb-4">Download it and present it at the venue for check-in.</p>
+            <h3 className="font-bold text-brand-purple mb-2">Your E-Ticket</h3>
+            <p className="text-sm text-gray-600 mb-4">You can also download it directly here.</p>
             <button 
               onClick={() => generateTicketPDF({ id: regId, ...formData }, eventData)} 
               className="w-full bg-brand-purple text-white py-3 rounded-xl font-bold hover:bg-brand-purple/90 transition shadow-md flex items-center justify-center gap-2"
@@ -102,7 +140,6 @@ export default function EventDetail() {
     );
   }
 
-  // Main Event Page
   return (
     <div className="bg-canvas min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4">
@@ -131,17 +168,17 @@ export default function EventDetail() {
             {isPast ? (
               <div className="text-center py-12">
                 <h2 className="text-2xl font-bold text-gray-400 mb-2">Event Completed</h2>
-                <p className="text-gray-500">Thank you to everyone who attended! Check back later for upcoming events.</p>
+                <p className="text-gray-500">Thank you to everyone who attended!</p>
               </div>
             ) : isOngoing ? (
               <div className="text-center py-12 bg-green-50 rounded-2xl border border-green-100">
                 <h2 className="text-2xl font-bold text-green-700 mb-2">Event is Currently Ongoing! 🎉</h2>
-                <p className="text-green-600">Registration is closed. If you are at the venue, please proceed to the registration desk for check-in.</p>
+                <p className="text-green-600">Registration is closed. Please proceed to the registration desk for check-in.</p>
               </div>
             ) : !eventData.isRegistrationOpen ? (
               <div className="text-center py-12">
                 <h2 className="text-2xl font-bold text-gray-500 mb-2">Registration Closed</h2>
-                <p className="text-gray-500">Registration for this event is currently closed. Please check back later.</p>
+                <p className="text-gray-500">Registration for this event is currently closed.</p>
               </div>
             ) : (
               <>
@@ -206,7 +243,7 @@ export default function EventDetail() {
                   </div>
 
                   <button disabled={busy} type="submit" className="w-full bg-brand-orange text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-500 transition shadow-lg mt-4 disabled:opacity-50">
-                    {busy ? 'Submitting...' : 'Complete Registration'}
+                    {busy ? 'Processing Registration...' : 'Complete Registration'}
                   </button>
                 </form>
               </>
