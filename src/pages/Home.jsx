@@ -12,7 +12,6 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // 1. Fetch Next Event
         const eventsSnap = await getDocs(collection(db, 'events'));
         const events = eventsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const upcoming = events
@@ -20,13 +19,11 @@ export default function Home() {
           .sort((a, b) => new Date(a.targetDate) - new Date(b.targetDate));
         if (upcoming.length > 0) setNextEvent(upcoming[0]);
 
-        // 2. Fetch WhatsApp Link
         const settingsSnap = await getDoc(doc(db, 'siteContent', 'settings'));
         if (settingsSnap.exists() && settingsSnap.data().whatsappLink) {
           setWhatsappLink(settingsSnap.data().whatsappLink);
         }
 
-        // 3. Fetch Executives (for the slideshow marquee)
         const execSnap = await getDocs(collection(db, 'executives'));
         const execData = execSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         execData.sort((a, b) => (a.order || 99) - (b.order || 99));
@@ -42,11 +39,8 @@ export default function Home() {
   return (
     <div className="bg-canvas overflow-x-hidden">
       
-      {/* =========================================
-          1. HERO SECTION (With Animations)
-          ========================================= */}
+      {/* 1. HERO SECTION */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-brand-purple">
-        
         <img 
           src="https://res.cloudinary.com/izxlyyn5/image/upload/w_1600,q_auto,f_auto/v1793972187/FEB_22TH_2026_18_of_38.jpg" 
           alt="Indispensables Teens" 
@@ -83,7 +77,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Glass Card */}
           <div className="animate-fade-in-up animation-delay-300 md:w-2/5 w-full max-w-sm mx-auto md:ml-auto mt-8 md:mt-0">
             <div className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl text-gray-800 border border-white/60 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-purple to-brand-orange"></div>
@@ -119,19 +112,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* =========================================
-          2. EXECUTIVE MARQUEE (Slideshow)
-          ========================================= */}
+      {/* 2. EXECUTIVE MARQUEE */}
       {executives.length > 0 && (
         <section className="bg-brand-purple py-12 border-t border-white/10 relative z-20 overflow-hidden">
           <div className="text-center mb-6">
             <p className="text-brand-orange font-bold uppercase tracking-widest text-sm">Meet the Leadership</p>
           </div>
           
-          {/* The Marquee Container */}
           <div className="relative w-full overflow-hidden flex">
             <div className="flex animate-marquee whitespace-nowrap gap-6 px-3">
-              {/* We double the array so it loops seamlessly */}
               {[...executives, ...executives].map((exec, index) => (
                 <div key={index} className="inline-flex flex-col items-center w-28 md:w-32 flex-shrink-0 group">
                   <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white/20 shadow-lg group-hover:border-brand-orange transition-colors cursor-pointer">
@@ -152,12 +141,9 @@ export default function Home() {
         </section>
       )}
 
-      {/* =========================================
-          3. FEATURED EVENT (Huge Countdown Block)
-          ========================================= */}
+      {/* 3. FEATURED EVENT */}
       {nextEvent && (
         <section className="py-24 bg-gray-50 relative overflow-hidden">
-          {/* Decorative background elements */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-brand-orange/5 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-brand-purple/5 rounded-full blur-3xl"></div>
 
@@ -171,16 +157,15 @@ export default function Home() {
 
             <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-gray-100 flex flex-col lg:flex-row">
               
-              {/* Left: Event Flyer */}
-              <div className="lg:w-1/2 h-80 lg:h-auto relative bg-brand-purple/10">
+              {/* 🌟 FIXED FLYER CONTAINER FOR MOBILE 🌟 */}
+              <div className="lg:w-1/2 relative bg-gray-100 flex items-center justify-center min-h-[300px]">
                 <img 
                   src={nextEvent.flyerUrl || 'https://via.placeholder.com/800x800?text=Event+Flyer'} 
                   alt={nextEvent.title} 
-                  className="w-full h-full object-cover object-center"
+                  className="w-full h-auto max-h-[600px] lg:max-h-full lg:h-full object-contain lg:object-cover object-center"
                 />
               </div>
 
-              {/* Right: Details & Countdown */}
               <div className="lg:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white text-center lg:text-left">
                 <div className="flex items-center justify-center lg:justify-start gap-4 text-brand-orange font-bold text-sm mb-4">
                   <span className="bg-orange-50 px-3 py-1 rounded-lg">📅 {nextEvent.displayDate}</span>
@@ -214,9 +199,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* =========================================
-          4. WELCOME MESSAGE
-          ========================================= */}
+      {/* 4. WELCOME MESSAGE */}
       <section className="py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
           <div className="md:w-1/2 relative">
@@ -245,9 +228,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* =========================================
-          5. MISSION & VISION
-          ========================================= */}
+      {/* 5. MISSION & VISION */}
       <section className="py-24 bg-gray-50 relative">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -291,7 +272,6 @@ export default function Home() {
                   <p className="leading-relaxed">To raise disciples thoroughly equipped for the work of ministry through the teaching of God's Word, by precept and practice.</p>
                 </li>
                 <li className="flex gap-4">
-                  <span className="font-bold text-brand-orange text-xl mt-1">3.</span>
                   <p className="leading-relaxed"><strong className="text-white">Indispensables Teens Global Pursuit:</strong> Our vision is to pursue these objectives faithfully until every nation in the world is reached by the Lord Jesus Christ.</p>
                 </li>
               </ul>
@@ -300,9 +280,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* =========================================
-          6. GIVE / PARTNER CTA
-          ========================================= */}
+      {/* 6. GIVE / PARTNER CTA */}
       <section className="py-24 bg-white">
         <div className="max-w-5xl mx-auto px-6">
           <div className="bg-brand-purple rounded-[3rem] p-10 md:p-20 text-center text-white shadow-2xl relative overflow-hidden">
