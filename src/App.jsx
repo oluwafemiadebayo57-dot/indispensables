@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
+import TrackRegistration from './pages/TrackRegistration';
 import Departments from './pages/Departments';
 import PrayerRequest from './pages/PrayerRequest';
 import Complaints from './pages/Complaints';
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="/about" element={<About />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:slug" element={<EventDetail />} />
+            <Route path="/track-registration" element={<TrackRegistration />} />
             <Route path="/departments" element={<Departments />} />
             <Route path="/register-teen" element={<TeenRegistration />} />
             <Route path="/prayer-request" element={<PrayerRequest />} />

@@ -18,9 +18,11 @@ export default function EventDetail() {
   const [regId, setRegId] = useState('');
   const [busy, setBusy] = useState(false);
   const [emailStatus, setEmailStatus] = useState(''); 
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     async function fetchEvent() {
+      if (!slug) { setLoading(false); return; }
       try {
         const q = query(collection(db, 'events'), where('slug', '==', slug));
         const snap = await getDocs(q);
@@ -39,25 +41,54 @@ export default function EventDetail() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setBusy(true);
+    setErrorMsg('');
     
     try {
-      // 1. Save to Firestore
+      const q = query(
+        collection(db, 'registrations'),
+        where('eventId', '==', eventData.id),
+        where('phone', '==', formData.phone.trim())
+      );
+      const existingSnap = await getDocs(q);
+      
+      if (!existingSnap.empty) {
+        setErrorMsg("This phone number is already registered for this event.");
+        setBusy(false);
+        return; 
+      }
+
       const docRef = await addDoc(collection(db, 'registrations'), {
         ...formData,
         eventId: eventData.id,
         eventTitle: eventData.title,
         attended: false,
         checkInTime: null,
+        paymentStatus: 'unpaid', // Default payment status
         createdAt: new Date().toISOString()
       });
       
       const newRegId = docRef.id;
       setRegId(newRegId);
       
-      // 2. Generate PDF Base64
       const ticketBase64 = getTicketBase64({ id: newRegId, ...formData }, eventData);
 
-      // 3. Send Email (Email is now compulsory, so we don't need to check if it exists)
+      // Build Payment Instructions for the Email
+      let paymentHtml = '';
+      if (eventData.registrationFee) {
+        paymentHtml = `
+          <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left;">
+            <h3 style="color: #F28C28; margin-top: 0;">Action Required: Payment</h3>
+            <p>Please pay the registration fee of <strong>₦${eventData.registrationFee}</strong> to:</p>
+            <ul style="list-style: none; padding: 0;">
+              <li><strong>Bank:</strong> ${eventData.bankName}</li>
+              <li><strong>Account No:</strong> ${eventData.accountNumber}</li>
+              <li><strong>Account Name:</strong> ${eventData.accountName}</li>
+            </ul>
+            <p>After paying, send your receipt on WhatsApp to <strong>${eventData.receiptWhatsApp}</strong> to confirm your payment.</p>
+          </div>
+        `;
+      }
+
       setEmailStatus('Sending ticket to your email...');
       await sendEmail({
         to: formData.email,
@@ -67,7 +98,7 @@ export default function EventDetail() {
             <h2 style="color: #6B2D91;">Registration Confirmed!</h2>
             <p>Hi <strong>${formData.fullName}</strong>,</p>
             <p>You are officially registered for <strong>${eventData.title}</strong>.</p>
-            <p>Please find your official E-Ticket attached to this email. You can print it or show the PDF on your phone at the venue for check-in.</p>
+            ${paymentHtml}
             <br/>
             <p style="color: #F28C28; font-weight: bold;">The Indispensables Team</p>
           </div>
@@ -85,7 +116,7 @@ export default function EventDetail() {
       window.scrollTo(0, 0);
     } catch (error) {
       console.error("Registration error:", error);
-      alert("Failed to submit registration. Please try again.");
+      setErrorMsg("Failed to submit registration. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -104,10 +135,19 @@ export default function EventDetail() {
   const isPast = eventDate < now && (now.getTime() - eventDate.getTime() > 24 * 60 * 60 * 1000);
   const isOngoing = !isPast && eventDate <= now;
 
+  // Helper to generate WhatsApp link for receipt
+  const getWaLink = () => {
+    if (!eventData.receiptWhatsApp) return null;
+    const clean = eventData.receiptWhatsApp.replace(/\D/g, '');
+    const number = clean.startsWith('0') ? `234${clean.substring(1)}` : clean;
+    const text = encodeURIComponent(`Hello, here is my payment receipt for ${eventData.title}. My name is ${formData.fullName}.`);
+    return `https://wa.me/${number}?text=${text}`;
+  };
+
   if (submitted) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center bg-gray-50 px-4 py-12">
-        <div className="bg-white p-10 rounded-3xl shadow-xl max-w-lg w-full text-center border-t-8 border-green-500">
+        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl max-w-lg w-full text-center border-t-8 border-green-500">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-3xl font-bold text-brand-purple mb-2">Registration Successful!</h2>
           <p className="text-gray-600 mb-4">
@@ -118,21 +158,40 @@ export default function EventDetail() {
             <p className="text-sm font-bold text-brand-purple mb-6 bg-brand-purple/5 p-3 rounded-lg">{emailStatus}</p>
           )}
 
+          {/* PAYMENT INSTRUCTIONS BOX */}
+          {eventData.registrationFee && eventData.accountNumber && (
+            <div className="bg-orange-50 border border-orange-200 rounded-2xl p-6 mb-8 text-left">
+              <h3 className="font-bold text-brand-orange text-lg mb-2">Action Required: Payment</h3>
+              <p className="text-sm text-gray-700 mb-4">Please pay the registration fee of <strong>₦{eventData.registrationFee}</strong> to the account below:</p>
+              
+              <div className="bg-white p-4 rounded-lg border border-orange-100 space-y-1 mb-4">
+                <p><span className="text-gray-500 text-sm">Bank:</span> <strong>{eventData.bankName}</strong></p>
+                <p><span className="text-gray-500 text-sm">Acct No:</span> <strong className="text-lg tracking-wider">{eventData.accountNumber}</strong></p>
+                <p><span className="text-gray-500 text-sm">Acct Name:</span> <strong>{eventData.accountName}</strong></p>
+              </div>
+
+              {getWaLink() && (
+                <a 
+                  href={getWaLink()} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-full bg-[#25D366] text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-[#20BD5A] transition"
+                >
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                  Send Receipt on WhatsApp
+                </a>
+              )}
+            </div>
+          )}
+
           <div className="bg-brand-purple/5 border border-brand-purple/20 rounded-2xl p-6 mb-8">
             <h3 className="font-bold text-brand-purple mb-2">Your E-Ticket</h3>
-            <p className="text-sm text-gray-600 mb-4">You can also download it directly here.</p>
-            <button 
-              onClick={() => generateTicketPDF({ id: regId, ...formData }, eventData)} 
-              className="w-full bg-brand-purple text-white py-3 rounded-xl font-bold hover:bg-brand-purple/90 transition shadow-md flex items-center justify-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            <button onClick={() => generateTicketPDF({ id: regId, ...formData }, eventData)} className="w-full bg-brand-purple text-white py-3 rounded-xl font-bold hover:bg-brand-purple/90 transition shadow-md flex items-center justify-center gap-2">
               Download E-Ticket
             </button>
           </div>
 
-          <Link to="/" className="text-brand-orange font-bold hover:underline">
-            Return to Home
-          </Link>
+          <Link to="/" className="text-brand-orange font-bold hover:underline">Return to Home</Link>
         </div>
       </div>
     );
@@ -141,10 +200,7 @@ export default function EventDetail() {
   return (
     <div className="bg-canvas min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4">
-        <Link to="/events" className="text-brand-orange font-semibold hover:underline mb-6 inline-block">
-          &larr; Back to all events
-        </Link>
-
+        <Link to="/events" className="text-brand-orange font-semibold hover:underline mb-6 inline-block">&larr; Back to all events</Link>
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
           
           <div className="bg-brand-purple p-8 md:p-12 text-white text-center flex flex-col items-center">
@@ -153,7 +209,6 @@ export default function EventDetail() {
               <span>📅 {eventData.displayDate || eventData.date}</span>
               <span>📍 {eventData.location}</span>
             </div>
-
             {eventData.targetDate && (
               <div className="border-t border-white/20 pt-6 w-full flex flex-col items-center">
                 <p className="text-sm uppercase tracking-widest text-brand-orange font-bold mb-3">Event Starts In:</p>
@@ -183,6 +238,12 @@ export default function EventDetail() {
                 <h2 className="text-2xl font-bold text-brand-purple mb-2">Teen Registration Form</h2>
                 <p className="text-gray-500 mb-8">Please fill out this bio-data form accurately to secure your spot.</p>
 
+                {errorMsg && (
+                  <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl font-medium">
+                    ⚠️ {errorMsg}
+                  </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
@@ -209,7 +270,6 @@ export default function EventDetail() {
 
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      {/* ADDED * AND required HERE */}
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
                       <input required type="email" name="email" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
                     </div>

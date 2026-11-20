@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { uploadToImgBB } from '../../utils/imgbb';
 import AdminNav from '../../components/layout/AdminNav';
@@ -9,17 +9,19 @@ export default function EventsAdmin() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   
-  // Form State
+  const [editId, setEditId] = useState(null); // Tracks if we are editing
   const [formData, setFormData] = useState({
-    title: '', targetDate: '', displayDate: '', location: '', description: '', isRegistrationOpen: true
+    title: '', targetDate: '', displayDate: '', location: '', description: '', isRegistrationOpen: true,
+    registrationFee: '', bankName: '', accountNumber: '', accountName: '', receiptWhatsApp: ''
   });
+  
   const [flyer, setFlyer] = useState(null);
+  const [existingFlyerUrl, setExistingFlyerUrl] = useState(''); // Keeps the old image if not changing
 
   const fetchEvents = async () => {
     try {
       const snapshot = await getDocs(collection(db, 'events'));
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      // Sort newest first
       data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setEvents(data);
     } catch (error) {
@@ -31,67 +33,108 @@ export default function EventsAdmin() {
 
   useEffect(() => { fetchEvents(); }, []);
 
+  const handleEditClick = (event) => {
+    setEditId(event.id);
+    setFormData({
+      title: event.title || '',
+      targetDate: event.targetDate || '',
+      displayDate: event.displayDate || '',
+      location: event.location || '',
+      description: event.description || '',
+      isRegistrationOpen: event.isRegistrationOpen ?? true,
+      registrationFee: event.registrationFee || '',
+      bankName: event.bankName || '',
+      accountNumber: event.accountNumber || '',
+      accountName: event.accountName || '',
+      receiptWhatsApp: event.receiptWhatsApp || ''
+    });
+    setExistingFlyerUrl(event.flyerUrl || '');
+    setFlyer(null);
+    window.scrollTo(0, 0);
+  };
+
+  const handleCancelEdit = () => {
+    setEditId(null);
+    setFormData({ title: '', targetDate: '', displayDate: '', location: '', description: '', isRegistrationOpen: true, registrationFee: '', bankName: '', accountNumber: '', accountName: '', receiptWhatsApp: '' });
+    setExistingFlyerUrl('');
+    setFlyer(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setBusy(true);
     try {
-      let flyerUrl = '';
-      // 1. Upload to ImgBB if a file was selected
+      let flyerUrl = existingFlyerUrl;
+      
+      // If a new flyer was uploaded, replace the old one
       if (flyer) {
         flyerUrl = await uploadToImgBB(flyer);
       }
 
-      // 2. Generate URL slug from Title
+      // Generate slug (if creating new, or if title changed)
       const slug = formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-      // 3. Save to Firestore
-      await addDoc(collection(db, 'events'), {
+      const payload = {
         ...formData,
         slug,
-        flyerUrl,
-        createdAt: new Date().toISOString()
-      });
+        flyerUrl
+      };
 
-      alert('Event created successfully!');
-      setFormData({ title: '', targetDate: '', displayDate: '', location: '', description: '', isRegistrationOpen: true });
-      setFlyer(null);
+      if (editId) {
+        // Update existing event
+        await updateDoc(doc(db, 'events', editId), payload);
+        alert('Event updated successfully!');
+      } else {
+        // Create new event
+        await addDoc(collection(db, 'events'), {
+          ...payload,
+          createdAt: new Date().toISOString()
+        });
+        alert('Event created successfully!');
+      }
+
+      handleCancelEdit(); // Reset form
       fetchEvents(); // Refresh list
     } catch (error) {
-      console.error(error);
-      alert(error.message || "Failed to create event.");
+      alert(error.message || "Failed to save event.");
     } finally {
       setBusy(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this event? This cannot be undone.")) return;
-    try {
-      await deleteDoc(doc(db, 'events', id));
-      fetchEvents();
-    } catch (error) {
-      console.error("Error deleting event:", error);
-    }
+    if (!window.confirm("Are you sure you want to delete this event? This will not delete the registrations, but the event page will stop working.")) return;
+    await deleteDoc(doc(db, 'events', id));
+    fetchEvents();
   };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <AdminNav />
-      
       <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-8">
         
-        {/* LEFT: CREATE EVENT FORM */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 h-fit">
-          <h2 className="text-2xl font-bold text-brand-purple mb-6">Create New Event</h2>
+        {/* LEFT: CREATE/EDIT EVENT FORM */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 h-fit sticky top-24">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-brand-purple">
+              {editId ? 'Edit Event' : 'Create New Event'}
+            </h2>
+            {editId && (
+              <button onClick={handleCancelEdit} className="text-sm text-red-500 font-bold hover:underline">
+                Cancel Edit
+              </button>
+            )}
+          </div>
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Event Title *</label>
-              <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-purple focus:outline-none" placeholder="e.g. Annual December Program" />
+              <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Real Date & Time (For Countdown) *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Target Date & Time *</label>
                 <input required type="datetime-local" value={formData.targetDate} onChange={e => setFormData({...formData, targetDate: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
               </div>
               <div>
@@ -102,26 +145,58 @@ export default function EventsAdmin() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
-              <input required type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-purple focus:outline-none" placeholder="e.g. Province HQ" />
+              <input required type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-              <textarea required rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-purple focus:outline-none" placeholder="What is this event about?" />
+              <textarea required rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Event Flyer (Uploads to ImgBB)</label>
-              <input type="file" accept="image/*" onChange={e => setFlyer(e.target.files[0])} className="w-full border border-gray-300 rounded-lg p-2 bg-gray-50 text-sm" />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Event Flyer {editId && <span className="text-gray-400 font-normal text-xs">(Leave blank to keep current)</span>}
+                </label>
+                <input type="file" accept="image/*" onChange={e => setFlyer(e.target.files[0])} className="w-full border border-gray-300 rounded-lg p-2 bg-gray-50 text-sm" />
+              </div>
+              <div className="flex items-center gap-3 bg-brand-purple/5 p-3 rounded-lg">
+                <input type="checkbox" checked={formData.isRegistrationOpen} onChange={e => setFormData({...formData, isRegistrationOpen: e.target.checked})} className="w-5 h-5 accent-brand-purple" />
+                <label className="text-sm font-bold text-brand-purple">Open Registration?</label>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3 bg-brand-purple/5 p-3 rounded-lg">
-              <input type="checkbox" checked={formData.isRegistrationOpen} onChange={e => setFormData({...formData, isRegistrationOpen: e.target.checked})} className="w-5 h-5 accent-brand-purple" />
-              <label className="text-sm font-bold text-brand-purple">Open Registration for this Event?</label>
+            {/* PAYMENT DETAILS SECTION */}
+            <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 space-y-4 mt-6">
+              <h3 className="font-bold text-brand-orange flex items-center gap-2">💰 Payment Details (Optional)</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Registration Fee (₦)</label>
+                  <input type="number" value={formData.registrationFee} onChange={e => setFormData({...formData, registrationFee: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-orange focus:outline-none" placeholder="e.g. 2000" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Receipt WhatsApp No.</label>
+                  <input type="text" value={formData.receiptWhatsApp} onChange={e => setFormData({...formData, receiptWhatsApp: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-orange focus:outline-none" placeholder="e.g. 08012345678" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Bank Name</label>
+                <input type="text" value={formData.bankName} onChange={e => setFormData({...formData, bankName: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-orange focus:outline-none" placeholder="e.g. GTBank" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Account Number</label>
+                  <input type="text" value={formData.accountNumber} onChange={e => setFormData({...formData, accountNumber: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-orange focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Account Name</label>
+                  <input type="text" value={formData.accountName} onChange={e => setFormData({...formData, accountName: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-orange focus:outline-none" />
+                </div>
+              </div>
             </div>
 
-            <button disabled={busy} type="submit" className="w-full bg-brand-purple text-white py-3 rounded-lg font-bold hover:bg-brand-purple/90 transition disabled:opacity-50">
-              {busy ? 'Uploading to ImgBB & Saving...' : 'Create Event'}
+            <button disabled={busy} type="submit" className={`w-full text-white py-3 rounded-lg font-bold transition disabled:opacity-50 mt-4 ${editId ? 'bg-green-600 hover:bg-green-700' : 'bg-brand-purple hover:bg-brand-purple/90'}`}>
+              {busy ? 'Saving...' : editId ? 'Update Event Details' : 'Create Event'}
             </button>
           </form>
         </div>
@@ -132,20 +207,36 @@ export default function EventsAdmin() {
           {loading ? <p>Loading events...</p> : events.length === 0 ? <p className="text-gray-500">No events created yet.</p> : (
             <div className="space-y-4">
               {events.map(event => (
-                <div key={event.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 items-center">
-                  <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                     <img src={event.flyerUrl || 'https://via.placeholder.com/150'} alt="" className="w-full h-full object-cover" />
+                <div key={event.id} className={`bg-white p-4 rounded-xl shadow-sm border flex flex-col gap-3 ${editId === event.id ? 'border-brand-orange ring-2 ring-brand-orange/20' : 'border-gray-100'}`}>
+                  
+                  <div className="flex gap-4 items-center">
+                    <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                      <img src={event.flyerUrl || 'https://via.placeholder.com/150'} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-grow">
+                      <h3 className="font-bold text-gray-800 text-lg leading-tight">{event.title}</h3>
+                      <p className="text-sm text-gray-500 mb-1">{event.displayDate || event.date} · {event.location}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <span className={`text-xs font-bold px-2 py-1 rounded ${event.isRegistrationOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {event.isRegistrationOpen ? 'Open' : 'Closed'}
+                        </span>
+                        {event.registrationFee && (
+                          <span className="text-xs font-bold px-2 py-1 rounded bg-brand-orange/10 text-brand-orange">
+                            Fee: ₦{event.registrationFee}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-grow">
-                    <h3 className="font-bold text-gray-800 text-lg">{event.title}</h3>
-                    <p className="text-sm text-gray-500 mb-1">{event.displayDate || event.date} · {event.location}</p>
-                    <span className={`text-xs font-bold px-2 py-1 rounded ${event.isRegistrationOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {event.isRegistrationOpen ? 'Registration Open' : 'Registration Closed'}
-                    </span>
+
+                  <div className="flex gap-2 mt-2 pt-3 border-t border-gray-100">
+                    <button onClick={() => handleEditClick(event)} className="flex-1 text-blue-600 bg-blue-50 py-2 rounded-lg font-bold text-sm hover:bg-blue-100 transition">
+                      Edit Details
+                    </button>
+                    <button onClick={() => handleDelete(event.id)} className="flex-1 text-red-500 bg-red-50 py-2 rounded-lg font-bold text-sm hover:bg-red-100 transition">
+                      Delete
+                    </button>
                   </div>
-                  <button onClick={() => handleDelete(event.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg font-bold text-sm transition-colors">
-                    Delete
-                  </button>
                 </div>
               ))}
             </div>
