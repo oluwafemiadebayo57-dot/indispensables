@@ -12,7 +12,6 @@ export default function Events() {
       try {
         const snapshot = await getDocs(collection(db, 'events'));
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Sort by date (optional, you can remove this if you want creation date)
         setEvents(data);
       } catch (error) {
         console.error("Error fetching events:", error);
@@ -27,9 +26,21 @@ export default function Events() {
 
   return (
     <div className="bg-canvas min-h-screen">
-      <section className="bg-brand-purple py-16 text-center px-4">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Upcoming Events</h1>
-        <p className="text-lg text-white/80">Stay updated with all our provincial programs.</p>
+      <section className="bg-brand-purple py-16 text-center px-4 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+        <div className="relative z-10 max-w-3xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Upcoming Events</h1>
+          <p className="text-lg text-white/80 mb-8">Stay updated with all our provincial programs.</p>
+          
+          {/* TRACK REGISTRATION BUTTON */}
+          <Link 
+            to="/track-registration" 
+            className="inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur-md border border-white/30 text-white px-8 py-3 rounded-xl font-bold hover:bg-white/20 transition-all shadow-lg hover:-translate-y-1"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+            Track My Registration Status
+          </Link>
+        </div>
       </section>
 
       <section className="py-20">
@@ -46,7 +57,7 @@ export default function Events() {
                     <img src={event.flyerUrl || 'https://via.placeholder.com/400x300?text=No+Flyer'} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   </div>
                   <div className="p-6 flex flex-col flex-grow">
-                    <div className="text-sm text-brand-orange font-bold mb-2">📅 {event.date}</div>
+                    <div className="text-sm text-brand-orange font-bold mb-2">📅 {event.displayDate || event.date}</div>
                     <h3 className="text-2xl font-bold text-brand-purple mb-2">{event.title}</h3>
                     <p className="text-gray-500 text-sm mb-4">📍 {event.location}</p>
                     <p className="text-gray-600 mb-6 flex-grow line-clamp-3">{event.description}</p>

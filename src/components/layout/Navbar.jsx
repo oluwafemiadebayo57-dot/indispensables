@@ -6,6 +6,7 @@ const links = [
   { to: '/',              label: 'Home' },
   { to: '/about',         label: 'About' },
   { to: '/events',        label: 'Events' },
+  { to: '/track-registration', label: 'Track Status' }, // <-- ADDED HERE
   { to: '/register-teen', label: 'Register Teen' },
   { to: '/departments',   label: 'Departments' },
   { to: '/prayer-request',label: 'Prayer' },
@@ -37,7 +38,7 @@ export default function Navbar() {
         </Link>
 
         {/* DESKTOP NAVIGATION */}
-        <nav className="hidden lg:flex items-center gap-5 text-sm font-medium">
+        <nav className="hidden xl:flex items-center gap-4 text-sm font-medium">
           {links.map(l => (
             <NavLink 
               key={l.to} 
@@ -49,10 +50,9 @@ export default function Navbar() {
             </NavLink>
           ))}
           
-          {/* Only show Dashboard/Logout if they are logged in. Hide "Login" entirely */}
           {user && (
             <div className="flex items-center gap-3 pl-3 border-l border-white/20">
-              <Link to={adminHome} className="hover:text-brand-orange transition-colors">Dashboard</Link>
+              <Link to={adminHome} className="hover:text-brand-orange transition-colors font-bold">Dashboard</Link>
               <button onClick={logout} className="text-brand-orange hover:text-white transition-colors">Logout</button>
             </div>
           )}
@@ -60,7 +60,7 @@ export default function Navbar() {
 
         {/* MOBILE MENU BUTTON */}
         <button 
-          className="lg:hidden text-2xl p-2" 
+          className="xl:hidden text-2xl p-2" 
           onClick={() => setOpen(!open)} 
           aria-label="menu"
         >
@@ -70,7 +70,7 @@ export default function Navbar() {
 
       {/* MOBILE NAVIGATION DROPDOWN */}
       {open && (
-        <div className="lg:hidden px-4 pb-4 flex flex-col gap-3 bg-brand-purple border-t border-white/10 text-sm">
+        <div className="xl:hidden px-4 pb-4 flex flex-col gap-3 bg-brand-purple border-t border-white/10 text-sm">
           {links.map(l => (
             <NavLink 
               key={l.to} 
