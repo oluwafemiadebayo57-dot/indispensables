@@ -1,113 +1,117 @@
-import { useState } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
-export default function TeenRegistration() {
-  const [formData, setFormData] = useState({
-    fullName: '', gender: '', dob: '', phone: '', email: '', parish: '', guardianName: '', guardianPhone: '', medicalNotes: ''
-  });
-  const [submitted, setSubmitted] = useState(false);
-  const [busy, setBusy] = useState(false);
+export default function TrackRegistration() {
+  const [events, setEvents] = useState([]);
+  const [selectedEventId, setSelectedEventId] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState([]); // Changed from single result to array
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    async function fetchEvents() {
+      const snap = await getDocs(collection(db, 'events'));
+      setEvents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }
+    fetchEvents();
+  }, []);
+
+  const handleTrack = async (e) => {
     e.preventDefault();
-    setBusy(true);
+    setLoading(true);
+    setError('');
+    setResults([]);
+
     try {
-      await addDoc(collection(db, 'provinceTeens'), {
-        ...formData,
-        createdAt: new Date().toISOString()
-      });
-      setSubmitted(true);
-    } catch (error) {
-      alert("Failed to submit registration. Please try again.");
+      const q = query(
+        collection(db, 'registrations'),
+        where('eventId', '==', selectedEventId),
+        where('phone', '==', phone.trim())
+      );
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        setError("No registration found for this phone number and event.");
+      } else {
+        // Map all results found
+        const data = snap.docs.map(doc => doc.data());
+        setResults(data);
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
   };
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  if (submitted) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center bg-gray-50 px-4">
-        <div className="bg-white p-10 rounded-2xl shadow-xl max-w-lg w-full text-center border-t-8 border-brand-purple">
-          <div className="text-6xl mb-4">🙌</div>
-          <h2 className="text-3xl font-bold text-brand-purple mb-2">Welcome to the Family!</h2>
-          <p className="text-gray-600 mb-6">
-            You have been officially registered under RCCG Ondo Province 11 Teen Affairs. We will contact you with updates.
-          </p>
-          <a href="#/" className="bg-brand-purple text-white px-8 py-3 rounded-lg font-bold hover:bg-brand-purple/90 transition inline-block">
-            Return to Home
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-canvas min-h-screen py-16 px-4">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-xl mx-auto">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-brand-purple mb-4">Join The Indispensables</h1>
-          <p className="text-gray-600">Register officially as a teen in Ondo Province 11. This is not an event registration.</p>
+          <div className="bg-brand-purple/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-4xl">🎟️</span>
+          </div>
+          <h1 className="text-4xl font-bold text-brand-purple mb-4">Track Registration</h1>
+          <p className="text-gray-600">Check your payment and attendance status.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white p-8 md:p-12 rounded-3xl shadow-lg border border-gray-100 space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-              <input required type="text" name="fullName" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
-              <select required name="gender" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none">
-                <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
-              <input required type="date" name="dob" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
-              <input required type="tel" name="phone" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
-            </div>
+        <form onSubmit={handleTrack} className="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 space-y-5 mb-8">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Select Event</label>
+            <select required value={selectedEventId} onChange={e => setSelectedEventId(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none">
+              <option value="">-- Choose an event --</option>
+              {events.map(ev => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
+            </select>
           </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-              <input type="email" name="email" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Home Parish (Province 11) *</label>
-              <input required type="text" name="parish" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
-            </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Phone Number Used</label>
+            <input required type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" placeholder="e.g. 08012345678" />
           </div>
-
-          <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Parent/Guardian Name *</label>
-                <input required type="text" name="guardianName" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Parent/Guardian Phone *</label>
-                <input required type="tel" name="guardianPhone" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Any Medical Conditions / Allergies? (Optional)</label>
-              <textarea name="medicalNotes" onChange={handleChange} rows="2" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-purple focus:outline-none"></textarea>
-            </div>
-          </div>
-
-          <button disabled={busy} type="submit" className="w-full bg-brand-orange text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-500 transition shadow-lg mt-4 disabled:opacity-50">
-            {busy ? 'Registering...' : 'Complete Official Registration'}
+          <button disabled={loading || !selectedEventId} type="submit" className="w-full bg-brand-purple text-white py-3 rounded-lg font-bold hover:bg-brand-purple/90 transition disabled:opacity-50">
+            {loading ? 'Checking...' : 'Check Status'}
           </button>
         </form>
+
+        {error && <p className="text-red-500 text-center font-medium bg-red-50 p-4 rounded-lg">{error}</p>}
+
+        {/* Display all registrations found for this number */}
+        {results.length > 0 && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-gray-800 text-center">Found {results.length} Registration(s)</h2>
+            {results.map((result, index) => (
+              <div key={index} className="bg-white rounded-2xl shadow-xl border-t-8 border-brand-purple overflow-hidden animate-fade-in-up">
+                <div className="p-6 border-b border-gray-100 bg-gray-50 text-center">
+                  <p className="text-sm text-gray-500 uppercase tracking-widest font-bold mb-1">Registered Name</p>
+                  <h2 className="text-2xl font-bold text-brand-purple">{result.fullName}</h2>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div className="flex justify-between items-center p-4 rounded-xl border border-gray-100 bg-gray-50">
+                    <span className="font-bold text-gray-700">Attendance Status</span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${result.attended ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                      {result.attended ? '✓ Attended' : 'Not Checked In'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center p-4 rounded-xl border border-gray-100 bg-gray-50">
+                    <span className="font-bold text-gray-700">Payment Status</span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${result.paymentStatus === 'paid' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
+                      {result.paymentStatus === 'paid' ? '✓ Paid' : 'Unpaid / Pending'}
+                    </span>
+                  </div>
+
+                  {result.paymentStatus !== 'paid' && (
+                    <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 text-center mt-4">
+                      <p className="text-sm text-gray-700 mb-2">If you have paid, please ensure you sent your receipt to the HOD on WhatsApp.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
