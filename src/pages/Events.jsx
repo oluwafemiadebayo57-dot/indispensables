@@ -32,7 +32,6 @@ export default function Events() {
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Upcoming Events</h1>
           <p className="text-lg text-white/80 mb-8">Stay updated with all our provincial programs.</p>
           
-          {/* TRACK REGISTRATION BUTTON */}
           <Link 
             to="/track-registration" 
             className="inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur-md border border-white/30 text-white px-8 py-3 rounded-xl font-bold hover:bg-white/20 transition-all shadow-lg hover:-translate-y-1"
@@ -53,9 +52,16 @@ export default function Events() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {events.map((event) => (
                 <div key={event.id} className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 flex flex-col group">
-                  <div className="h-56 relative overflow-hidden bg-gray-200">
-                    <img src={event.flyerUrl || 'https://via.placeholder.com/400x300?text=No+Flyer'} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  
+                  {/* FIXED FLYER CONTAINER */}
+                  <div className="h-72 w-full relative overflow-hidden bg-gray-50 flex items-center justify-center p-2">
+                    <img 
+                      src={event.flyerUrl || 'https://via.placeholder.com/400x600?text=No+Flyer'} 
+                      alt={event.title} 
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
+                    />
                   </div>
+                  
                   <div className="p-6 flex flex-col flex-grow">
                     <div className="text-sm text-brand-orange font-bold mb-2">📅 {event.displayDate || event.date}</div>
                     <h3 className="text-2xl font-bold text-brand-purple mb-2">{event.title}</h3>

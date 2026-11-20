@@ -44,7 +44,6 @@ export default function EventDetail() {
     setErrorMsg('');
     
     try {
-      // CHECK FOR DUPLICATES: Now checks Phone AND Name so siblings can share a phone
       const q = query(
         collection(db, 'registrations'),
         where('eventId', '==', eventData.id),
@@ -190,7 +189,16 @@ export default function EventDetail() {
         <Link to="/events" className="text-brand-orange font-semibold hover:underline mb-6 inline-block">&larr; Back to all events</Link>
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
           
+          {/* PURPLE HEADER WITH FLYER */}
           <div className="bg-brand-purple p-8 md:p-12 text-white text-center flex flex-col items-center">
+            
+            {/* ADDED FLYER HERE */}
+            {eventData.flyerUrl && (
+              <div className="w-full max-w-sm mb-8 rounded-xl overflow-hidden shadow-2xl border-4 border-white/20 bg-gray-50 p-2">
+                <img src={eventData.flyerUrl} alt={eventData.title} className="w-full h-auto max-h-[400px] object-contain rounded-lg" />
+              </div>
+            )}
+
             <h1 className="text-3xl md:text-4xl font-bold mb-4">{eventData.title}</h1>
             <div className="flex flex-wrap justify-center gap-6 text-brand-orange font-bold mb-8">
               <span>📅 {eventData.displayDate || eventData.date}</span>
