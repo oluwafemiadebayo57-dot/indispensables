@@ -11,6 +11,7 @@ export default function AdminNav() {
     { to: '/admin', label: 'Overview', end: true, presidencyOnly: true },
     { to: '/admin/events', label: 'Manage Events', presidencyOnly: true },
     { to: '/admin/plans', label: 'Event Plans', presidencyOnly: true },
+        { to: '/admin/finance', label: 'Finance', presidencyOnly: true },
     { to: '/admin/reports', label: 'Reports', presidencyOnly: true },
     { to: '/admin/complaints', label: 'Complaints', presidencyOnly: true },
     { to: '/admin/partners', label: 'Partners', presidencyOnly: true },

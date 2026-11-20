@@ -16,6 +16,7 @@ import TrackComplaint from './pages/TrackComplaint';
 import Partner from './pages/Partner';
 import Login from './pages/Login';
 import TeenRegistration from './pages/TeenRegistration';
+import FinanceAdmin from './pages/admin/FinanceAdmin';
 
 // Executive Portal Pages
 import MyReports from './pages/portal/MyReports';
@@ -97,6 +98,7 @@ export default function App() {
               <Route path="/admin/executives" element={<ExecutivesAdmin />} />
               <Route path="/admin/departments" element={<DepartmentsAdmin />} />
               <Route path="/admin/content" element={<SiteContentAdmin />} />
+              <Route path="/admin/finance" element={<FinanceAdmin />} />
             </Route>
           </Route>
 
