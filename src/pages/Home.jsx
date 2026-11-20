@@ -7,25 +7,31 @@ import Countdown from '../components/ui/Countdown';
 export default function Home() {
   const [nextEvent, setNextEvent] = useState(null);
   const [whatsappLink, setWhatsappLink] = useState('');
+  const [executives, setExecutives] = useState([]);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        // 1. Fetch the next upcoming event for the countdown
-        const snap = await getDocs(collection(db, 'events'));
-        const events = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
+        // 1. Fetch Next Event
+        const eventsSnap = await getDocs(collection(db, 'events'));
+        const events = eventsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const upcoming = events
           .filter(e => e.targetDate && new Date(e.targetDate) > new Date())
           .sort((a, b) => new Date(a.targetDate) - new Date(b.targetDate));
-        
         if (upcoming.length > 0) setNextEvent(upcoming[0]);
 
-        // 2. Fetch the WhatsApp Link from the Admin Settings
+        // 2. Fetch WhatsApp Link
         const settingsSnap = await getDoc(doc(db, 'siteContent', 'settings'));
         if (settingsSnap.exists() && settingsSnap.data().whatsappLink) {
           setWhatsappLink(settingsSnap.data().whatsappLink);
         }
+
+        // 3. Fetch Executives (for the slideshow marquee)
+        const execSnap = await getDocs(collection(db, 'executives'));
+        const execData = execSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        execData.sort((a, b) => (a.order || 99) - (b.order || 99));
+        setExecutives(execData);
+
       } catch (error) {
         console.error("Error fetching homepage data:", error);
       }
@@ -34,58 +40,51 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="bg-canvas">
+    <div className="bg-canvas overflow-x-hidden">
       
       {/* =========================================
-          1. HERO SECTION 
+          1. HERO SECTION (With Animations)
           ========================================= */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-brand-purple">
         
-        {/* BACKGROUND IMAGE */}
         <img 
-          src="https://res.cloudinary.com/izxlyyn5/image/upload/v1793972187/FEB_22TH_2026_18_of_38.jpg" 
+          src="https://res.cloudinary.com/izxlyyn5/image/upload/w_1600,q_auto,f_auto/v1793972187/FEB_22TH_2026_18_of_38.jpg" 
           alt="Indispensables Teens" 
-          className="absolute inset-0 w-full h-full object-cover object-center md:object-[center_20%]"
+          className="absolute inset-0 w-full h-full object-cover object-center md:object-[center_20%] scale-105 motion-safe:animate-[pulse_10s_ease-in-out_infinite]"
         />
         
-        {/* GRADIENT OVERLAY */}
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-purple via-brand-purple/95 to-brand-purple/40 md:bg-gradient-to-r md:from-brand-purple md:via-brand-purple/80 md:to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-purple via-brand-purple/90 to-brand-purple/40 md:bg-gradient-to-r md:from-brand-purple md:via-brand-purple/80 md:to-transparent"></div>
 
         <div className="max-w-7xl mx-auto px-6 py-20 md:py-32 relative z-10 flex flex-col md:flex-row items-center gap-12 w-full">
           
           <div className="md:w-3/5 text-center md:text-left flex flex-col items-center md:items-start">
-            <span className="inline-block py-1.5 px-4 rounded-full bg-brand-orange text-white text-xs md:text-sm font-bold tracking-wider mb-6 shadow-lg">
+            <span className="animate-fade-in-up inline-block py-1.5 px-4 rounded-full bg-brand-orange text-white text-xs md:text-sm font-bold tracking-wider mb-6 shadow-lg">
               RCCG ONDO PROVINCE 11
             </span>
             
-            <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold text-white leading-tight mb-6 drop-shadow-xl flex flex-col items-center md:items-start">
+            <h1 className="animate-fade-in-up animation-delay-100 text-3xl sm:text-5xl md:text-7xl font-extrabold text-white leading-tight mb-6 drop-shadow-xl flex flex-col items-center md:items-start">
               <span>Welcome to</span>
               <span className="text-brand-orange whitespace-nowrap text-[2rem] sm:text-5xl md:text-7xl mt-1 md:mt-2">
                 The Indispensables
               </span>
             </h1>
             
-            <p className="text-base md:text-xl text-white/95 mb-10 max-w-lg font-medium drop-shadow-md leading-relaxed">
+            <p className="animate-fade-in-up animation-delay-200 text-base md:text-xl text-white/95 mb-10 max-w-lg font-medium drop-shadow-md leading-relaxed">
               Raising a generation of teenagers who are undeniably relevant, passionately devoted to Christ, and indispensable to the Kingdom.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              {/* SMART REGISTRATION BUTTON */}
-              <Link 
-                to={nextEvent ? `/events/${nextEvent.slug}` : '/events'} 
-                className="bg-brand-orange text-white px-8 py-4 rounded-xl font-bold hover:bg-orange-500 transition-all shadow-xl hover:-translate-y-1 text-center w-full sm:w-auto"
-              >
-                {nextEvent ? `Register for ${nextEvent.title}` : 'View Upcoming Events'}
-              </Link>
-              
-              <Link to="/about" className="bg-white/10 backdrop-blur-md border border-white/30 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/20 transition-all text-center w-full sm:w-auto">
+            <div className="animate-fade-in-up animation-delay-300 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <Link to="/about" className="bg-brand-orange text-white px-8 py-4 rounded-xl font-bold hover:bg-orange-500 transition-all shadow-xl hover:-translate-y-1 text-center w-full sm:w-auto">
                 Meet the Executives
+              </Link>
+              <Link to="/register-teen" className="bg-white/10 backdrop-blur-md border border-white/30 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/20 transition-all text-center w-full sm:w-auto">
+                Join the Province
               </Link>
             </div>
           </div>
 
-          {/* FLOATING GLASS CARD */}
-          <div className="md:w-2/5 w-full max-w-sm mx-auto md:ml-auto mt-8 md:mt-0">
+          {/* Glass Card */}
+          <div className="animate-fade-in-up animation-delay-300 md:w-2/5 w-full max-w-sm mx-auto md:ml-auto mt-8 md:mt-0">
             <div className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl text-gray-800 border border-white/60 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-purple to-brand-orange"></div>
               
@@ -104,7 +103,6 @@ export default function Home() {
                 </li>
               </ul>
               
-              {/* DYNAMIC WHATSAPP BUTTON (Only shows if link is added in Admin settings) */}
               {whatsappLink && (
                 <a 
                   href={whatsappLink} 
@@ -121,29 +119,110 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. DYNAMIC COUNTDOWN BANNER */}
-      {nextEvent && (
-        <section className="bg-brand-orange py-8 border-b-4 border-brand-purple shadow-inner relative z-20">
-          <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-white text-center md:text-left">
-              <h3 className="text-2xl font-extrabold uppercase tracking-wide">{nextEvent.title}</h3>
-              <p className="text-white/90 font-medium">{nextEvent.displayDate} · Registration is Open!</p>
-            </div>
-            
-            <div className="flex items-center">
-              <Countdown targetDate={nextEvent.targetDate} colorTheme="purple" />
+      {/* =========================================
+          2. EXECUTIVE MARQUEE (Slideshow)
+          ========================================= */}
+      {executives.length > 0 && (
+        <section className="bg-brand-purple py-12 border-t border-white/10 relative z-20 overflow-hidden">
+          <div className="text-center mb-6">
+            <p className="text-brand-orange font-bold uppercase tracking-widest text-sm">Meet the Leadership</p>
+          </div>
+          
+          {/* The Marquee Container */}
+          <div className="relative w-full overflow-hidden flex">
+            <div className="flex animate-marquee whitespace-nowrap gap-6 px-3">
+              {/* We double the array so it loops seamlessly */}
+              {[...executives, ...executives].map((exec, index) => (
+                <div key={index} className="inline-flex flex-col items-center w-28 md:w-32 flex-shrink-0 group">
+                  <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white/20 shadow-lg group-hover:border-brand-orange transition-colors cursor-pointer">
+                    {exec.photoUrl ? (
+                      <img src={exec.photoUrl} alt={exec.name} className="w-full h-full object-cover object-top" />
+                    ) : (
+                      <div className="w-full h-full bg-brand-orange flex items-center justify-center text-white font-bold text-2xl">
+                        {exec.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-white text-xs font-bold mt-3 text-center truncate w-full">{exec.name.split(' ')[0]}</p>
+                  <p className="text-brand-orange text-[10px] text-center truncate w-full">{exec.office}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* 3. WELCOME MESSAGE */}
+      {/* =========================================
+          3. FEATURED EVENT (Huge Countdown Block)
+          ========================================= */}
+      {nextEvent && (
+        <section className="py-24 bg-gray-50 relative overflow-hidden">
+          {/* Decorative background elements */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-brand-orange/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-brand-purple/5 rounded-full blur-3xl"></div>
+
+          <div className="max-w-7xl mx-auto px-4 relative z-10">
+            <div className="text-center mb-12 animate-fade-in-up">
+              <span className="bg-brand-purple text-white px-4 py-1 rounded-full text-sm font-bold tracking-widest uppercase mb-4 inline-block shadow-md">
+                Don't Miss Out
+              </span>
+              <h2 className="text-3xl md:text-5xl font-extrabold text-brand-purple">Upcoming Highlight</h2>
+            </div>
+
+            <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-gray-100 flex flex-col lg:flex-row">
+              
+              {/* Left: Event Flyer */}
+              <div className="lg:w-1/2 h-80 lg:h-auto relative bg-brand-purple/10">
+                <img 
+                  src={nextEvent.flyerUrl || 'https://via.placeholder.com/800x800?text=Event+Flyer'} 
+                  alt={nextEvent.title} 
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+
+              {/* Right: Details & Countdown */}
+              <div className="lg:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white text-center lg:text-left">
+                <div className="flex items-center justify-center lg:justify-start gap-4 text-brand-orange font-bold text-sm mb-4">
+                  <span className="bg-orange-50 px-3 py-1 rounded-lg">📅 {nextEvent.displayDate}</span>
+                  <span className="bg-orange-50 px-3 py-1 rounded-lg">📍 {nextEvent.location}</span>
+                </div>
+                
+                <h3 className="text-3xl md:text-5xl font-extrabold text-brand-purple mb-6 leading-tight">
+                  {nextEvent.title}
+                </h3>
+                
+                <p className="text-gray-600 text-lg mb-8 leading-relaxed line-clamp-3">
+                  {nextEvent.description}
+                </p>
+
+                <div className="mb-8">
+                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Event Starts In</p>
+                  <div className="flex justify-center lg:justify-start">
+                    <Countdown targetDate={nextEvent.targetDate} colorTheme="purple" />
+                  </div>
+                </div>
+
+                <Link 
+                  to={`/events/${nextEvent.slug}`} 
+                  className="w-full bg-brand-orange text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-500 transition-all shadow-xl hover:-translate-y-1 text-center inline-block"
+                >
+                  Register Now
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* =========================================
+          4. WELCOME MESSAGE
+          ========================================= */}
       <section className="py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
           <div className="md:w-1/2 relative">
             <div className="absolute top-4 left-4 w-full h-full bg-brand-orange/10 rounded-[2rem] -z-10"></div>
             <img 
-              src="https://res.cloudinary.com/izxlyyn5/image/upload/v1793961854/photo_6012415557241606481_y.jpg" 
+              src="https://res.cloudinary.com/izxlyyn5/image/upload/w_800,q_auto,f_auto/v1793961854/photo_6012415557241606481_y.jpg" 
               alt="Indispensables Teens" 
               className="rounded-[2rem] shadow-xl w-full h-[400px] md:h-[500px] object-cover object-top border-4 border-white"
             />
@@ -166,7 +245,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. MISSION & VISION */}
+      {/* =========================================
+          5. MISSION & VISION
+          ========================================= */}
       <section className="py-24 bg-gray-50 relative">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -219,7 +300,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. GIVE / PARTNER CTA */}
+      {/* =========================================
+          6. GIVE / PARTNER CTA
+          ========================================= */}
       <section className="py-24 bg-white">
         <div className="max-w-5xl mx-auto px-6">
           <div className="bg-brand-purple rounded-[3rem] p-10 md:p-20 text-center text-white shadow-2xl relative overflow-hidden">
