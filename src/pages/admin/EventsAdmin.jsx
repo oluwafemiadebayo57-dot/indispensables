@@ -9,14 +9,14 @@ export default function EventsAdmin() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   
-  const [editId, setEditId] = useState(null); // Tracks if we are editing
+  const [editId, setEditId] = useState(null);
   const [formData, setFormData] = useState({
     title: '', targetDate: '', displayDate: '', location: '', description: '', isRegistrationOpen: true,
-    registrationFee: '', bankName: '', accountNumber: '', accountName: '', receiptWhatsApp: ''
+    workerFee: '', nonWorkerFee: '', bankName: '', accountNumber: '', accountName: '', receiptWhatsApp: ''
   });
   
   const [flyer, setFlyer] = useState(null);
-  const [existingFlyerUrl, setExistingFlyerUrl] = useState(''); // Keeps the old image if not changing
+  const [existingFlyerUrl, setExistingFlyerUrl] = useState('');
 
   const fetchEvents = async () => {
     try {
@@ -42,7 +42,8 @@ export default function EventsAdmin() {
       location: event.location || '',
       description: event.description || '',
       isRegistrationOpen: event.isRegistrationOpen ?? true,
-      registrationFee: event.registrationFee || '',
+      workerFee: event.workerFee || '',
+      nonWorkerFee: event.nonWorkerFee || '',
       bankName: event.bankName || '',
       accountNumber: event.accountNumber || '',
       accountName: event.accountName || '',
@@ -55,7 +56,7 @@ export default function EventsAdmin() {
 
   const handleCancelEdit = () => {
     setEditId(null);
-    setFormData({ title: '', targetDate: '', displayDate: '', location: '', description: '', isRegistrationOpen: true, registrationFee: '', bankName: '', accountNumber: '', accountName: '', receiptWhatsApp: '' });
+    setFormData({ title: '', targetDate: '', displayDate: '', location: '', description: '', isRegistrationOpen: true, workerFee: '', nonWorkerFee: '', bankName: '', accountNumber: '', accountName: '', receiptWhatsApp: '' });
     setExistingFlyerUrl('');
     setFlyer(null);
   };
@@ -65,36 +66,20 @@ export default function EventsAdmin() {
     setBusy(true);
     try {
       let flyerUrl = existingFlyerUrl;
-      
-      // If a new flyer was uploaded, replace the old one
-      if (flyer) {
-        flyerUrl = await uploadToImgBB(flyer);
-      }
+      if (flyer) flyerUrl = await uploadToImgBB(flyer);
 
-      // Generate slug (if creating new, or if title changed)
       const slug = formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
-      const payload = {
-        ...formData,
-        slug,
-        flyerUrl
-      };
+      const payload = { ...formData, slug, flyerUrl };
 
       if (editId) {
-        // Update existing event
         await updateDoc(doc(db, 'events', editId), payload);
         alert('Event updated successfully!');
       } else {
-        // Create new event
-        await addDoc(collection(db, 'events'), {
-          ...payload,
-          createdAt: new Date().toISOString()
-        });
+        await addDoc(collection(db, 'events'), { ...payload, createdAt: new Date().toISOString() });
         alert('Event created successfully!');
       }
-
-      handleCancelEdit(); // Reset form
-      fetchEvents(); // Refresh list
+      handleCancelEdit();
+      fetchEvents();
     } catch (error) {
       alert(error.message || "Failed to save event.");
     } finally {
@@ -103,7 +88,7 @@ export default function EventsAdmin() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this event? This will not delete the registrations, but the event page will stop working.")) return;
+    if (!window.confirm("Are you sure you want to delete this event?")) return;
     await deleteDoc(doc(db, 'events', id));
     fetchEvents();
   };
@@ -113,17 +98,10 @@ export default function EventsAdmin() {
       <AdminNav />
       <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-8">
         
-        {/* LEFT: CREATE/EDIT EVENT FORM */}
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 h-fit sticky top-24">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-brand-purple">
-              {editId ? 'Edit Event' : 'Create New Event'}
-            </h2>
-            {editId && (
-              <button onClick={handleCancelEdit} className="text-sm text-red-500 font-bold hover:underline">
-                Cancel Edit
-              </button>
-            )}
+            <h2 className="text-2xl font-bold text-brand-purple">{editId ? 'Edit Event' : 'Create New Event'}</h2>
+            {editId && <button onClick={handleCancelEdit} className="text-sm text-red-500 font-bold hover:underline">Cancel Edit</button>}
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -155,9 +133,7 @@ export default function EventsAdmin() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Event Flyer {editId && <span className="text-gray-400 font-normal text-xs">(Leave blank to keep current)</span>}
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Event Flyer {editId && <span className="text-gray-400 font-normal text-xs">(Leave blank to keep current)</span>}</label>
                 <input type="file" accept="image/*" onChange={e => setFlyer(e.target.files[0])} className="w-full border border-gray-300 rounded-lg p-2 bg-gray-50 text-sm" />
               </div>
               <div className="flex items-center gap-3 bg-brand-purple/5 p-3 rounded-lg">
@@ -166,18 +142,21 @@ export default function EventsAdmin() {
               </div>
             </div>
 
-            {/* PAYMENT DETAILS SECTION */}
             <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 space-y-4 mt-6">
               <h3 className="font-bold text-brand-orange flex items-center gap-2">💰 Payment Details (Optional)</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Registration Fee (₦)</label>
-                  <input type="number" value={formData.registrationFee} onChange={e => setFormData({...formData, registrationFee: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-orange focus:outline-none" placeholder="e.g. 2000" />
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Teen / Non-Worker Fee (₦)</label>
+                  <input type="number" value={formData.nonWorkerFee} onChange={e => setFormData({...formData, nonWorkerFee: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-orange focus:outline-none" placeholder="e.g. 2000" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Receipt WhatsApp No.</label>
-                  <input type="text" value={formData.receiptWhatsApp} onChange={e => setFormData({...formData, receiptWhatsApp: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-orange focus:outline-none" placeholder="e.g. 08012345678" />
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Worker Fee (₦)</label>
+                  <input type="number" value={formData.workerFee} onChange={e => setFormData({...formData, workerFee: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-orange focus:outline-none" placeholder="e.g. 1000" />
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Receipt WhatsApp No.</label>
+                <input type="text" value={formData.receiptWhatsApp} onChange={e => setFormData({...formData, receiptWhatsApp: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-orange focus:outline-none" placeholder="e.g. 08012345678" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Bank Name</label>
@@ -201,14 +180,12 @@ export default function EventsAdmin() {
           </form>
         </div>
 
-        {/* RIGHT: EXISTING EVENTS LIST */}
         <div>
           <h2 className="text-2xl font-bold text-brand-purple mb-6">Manage Existing Events</h2>
           {loading ? <p>Loading events...</p> : events.length === 0 ? <p className="text-gray-500">No events created yet.</p> : (
             <div className="space-y-4">
               {events.map(event => (
                 <div key={event.id} className={`bg-white p-4 rounded-xl shadow-sm border flex flex-col gap-3 ${editId === event.id ? 'border-brand-orange ring-2 ring-brand-orange/20' : 'border-gray-100'}`}>
-                  
                   <div className="flex gap-4 items-center">
                     <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                       <img src={event.flyerUrl || 'https://via.placeholder.com/150'} alt="" className="w-full h-full object-cover" />
@@ -220,29 +197,23 @@ export default function EventsAdmin() {
                         <span className={`text-xs font-bold px-2 py-1 rounded ${event.isRegistrationOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                           {event.isRegistrationOpen ? 'Open' : 'Closed'}
                         </span>
-                        {event.registrationFee && (
+                        {event.nonWorkerFee && (
                           <span className="text-xs font-bold px-2 py-1 rounded bg-brand-orange/10 text-brand-orange">
-                            Fee: ₦{event.registrationFee}
+                            Teen: ₦{event.nonWorkerFee} | Worker: ₦{event.workerFee}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-
                   <div className="flex gap-2 mt-2 pt-3 border-t border-gray-100">
-                    <button onClick={() => handleEditClick(event)} className="flex-1 text-blue-600 bg-blue-50 py-2 rounded-lg font-bold text-sm hover:bg-blue-100 transition">
-                      Edit Details
-                    </button>
-                    <button onClick={() => handleDelete(event.id)} className="flex-1 text-red-500 bg-red-50 py-2 rounded-lg font-bold text-sm hover:bg-red-100 transition">
-                      Delete
-                    </button>
+                    <button onClick={() => handleEditClick(event)} className="flex-1 text-blue-600 bg-blue-50 py-2 rounded-lg font-bold text-sm hover:bg-blue-100 transition">Edit Details</button>
+                    <button onClick={() => handleDelete(event.id)} className="flex-1 text-red-500 bg-red-50 py-2 rounded-lg font-bold text-sm hover:bg-red-100 transition">Delete</button>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
