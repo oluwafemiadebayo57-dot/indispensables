@@ -187,7 +187,7 @@ export default function EventDetail() {
           <div className="bg-brand-purple p-8 md:p-12 text-white text-center flex flex-col items-center">
             {eventData.flyerUrl && (
               <div className="w-full max-w-sm mb-8 rounded-xl overflow-hidden shadow-2xl border-4 border-white/20 bg-gray-50 p-2">
-                <img src={eventData.flyerUrl} alt={eventData.title} className="w-full h-auto max-h-[400px] object-contain rounded-lg" />
+                <img src={eventData.flyerUrl} alt={eventData.title} loading="lazy" decoding="async" className="w-full h-auto max-h-[400px] object-contain rounded-lg" />
               </div>
             )}
             <h1 className="text-3xl md:text-4xl font-bold mb-4">{eventData.title}</h1>
@@ -218,7 +218,6 @@ export default function EventDetail() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   
-                  {/* WORKER / TEEN TOGGLE */}
                   <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 mb-6">
                     <label className="block text-sm font-bold text-gray-700 mb-3">I am registering as a: *</label>
                     <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">

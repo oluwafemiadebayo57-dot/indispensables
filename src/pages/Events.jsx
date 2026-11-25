@@ -53,11 +53,12 @@ export default function Events() {
               {events.map((event) => (
                 <div key={event.id} className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 flex flex-col group">
                   
-                  {/* FIXED FLYER CONTAINER */}
                   <div className="h-72 w-full relative overflow-hidden bg-gray-50 flex items-center justify-center p-2">
                     <img 
                       src={event.flyerUrl || 'https://via.placeholder.com/400x600?text=No+Flyer'} 
                       alt={event.title} 
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
                     />
                   </div>

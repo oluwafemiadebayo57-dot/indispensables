@@ -41,9 +41,11 @@ export default function Home() {
       
       {/* 1. HERO SECTION */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-brand-purple">
+        {/* Cloudinary optimization + fetchPriority for the main hero image */}
         <img 
           src="https://res.cloudinary.com/izxlyyn5/image/upload/w_1600,q_auto,f_auto/v1793972187/FEB_22TH_2026_18_of_38.jpg" 
           alt="Indispensables Teens" 
+          fetchPriority="high"
           className="absolute inset-0 w-full h-full object-cover object-center md:object-[center_20%] scale-105 motion-safe:animate-[pulse_10s_ease-in-out_infinite]"
         />
         
@@ -97,12 +99,7 @@ export default function Home() {
               </ul>
               
               {whatsappLink && (
-                <a 
-                  href={whatsappLink} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-full bg-[#25D366] text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#20BD5A] transition-all shadow-lg hover:-translate-y-0.5"
-                >
+                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="w-full bg-[#25D366] text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#20BD5A] transition-all shadow-lg hover:-translate-y-0.5">
                   <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                   Join WhatsApp Community
                 </a>
@@ -125,7 +122,7 @@ export default function Home() {
                 <div key={index} className="inline-flex flex-col items-center w-28 md:w-32 flex-shrink-0 group">
                   <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white/20 shadow-lg group-hover:border-brand-orange transition-colors cursor-pointer">
                     {exec.photoUrl ? (
-                      <img src={exec.photoUrl} alt={exec.name} className="w-full h-full object-cover object-top" />
+                      <img src={exec.photoUrl} alt={exec.name} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
                     ) : (
                       <div className="w-full h-full bg-brand-orange flex items-center justify-center text-white font-bold text-2xl">
                         {exec.name.charAt(0)}
@@ -149,50 +146,26 @@ export default function Home() {
 
           <div className="max-w-7xl mx-auto px-4 relative z-10">
             <div className="text-center mb-12 animate-fade-in-up">
-              <span className="bg-brand-purple text-white px-4 py-1 rounded-full text-sm font-bold tracking-widest uppercase mb-4 inline-block shadow-md">
-                Don't Miss Out
-              </span>
+              <span className="bg-brand-purple text-white px-4 py-1 rounded-full text-sm font-bold tracking-widest uppercase mb-4 inline-block shadow-md">Don't Miss Out</span>
               <h2 className="text-3xl md:text-5xl font-extrabold text-brand-purple">Upcoming Highlight</h2>
             </div>
 
             <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-gray-100 flex flex-col lg:flex-row">
-              
-              {/* 🌟 FIXED FLYER CONTAINER FOR MOBILE 🌟 */}
               <div className="lg:w-1/2 relative bg-gray-100 flex items-center justify-center min-h-[300px]">
-                <img 
-                  src={nextEvent.flyerUrl || 'https://via.placeholder.com/800x800?text=Event+Flyer'} 
-                  alt={nextEvent.title} 
-                  className="w-full h-auto max-h-[600px] lg:max-h-full lg:h-full object-contain lg:object-cover object-center"
-                />
+                <img src={nextEvent.flyerUrl || 'https://via.placeholder.com/800x800?text=Event+Flyer'} alt={nextEvent.title} loading="lazy" decoding="async" className="w-full h-auto max-h-[600px] lg:max-h-full lg:h-full object-contain lg:object-cover object-center" />
               </div>
-
               <div className="lg:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white text-center lg:text-left">
                 <div className="flex items-center justify-center lg:justify-start gap-4 text-brand-orange font-bold text-sm mb-4">
                   <span className="bg-orange-50 px-3 py-1 rounded-lg">📅 {nextEvent.displayDate}</span>
                   <span className="bg-orange-50 px-3 py-1 rounded-lg">📍 {nextEvent.location}</span>
                 </div>
-                
-                <h3 className="text-3xl md:text-5xl font-extrabold text-brand-purple mb-6 leading-tight">
-                  {nextEvent.title}
-                </h3>
-                
-                <p className="text-gray-600 text-lg mb-8 leading-relaxed line-clamp-3">
-                  {nextEvent.description}
-                </p>
-
+                <h3 className="text-3xl md:text-5xl font-extrabold text-brand-purple mb-6 leading-tight">{nextEvent.title}</h3>
+                <p className="text-gray-600 text-lg mb-8 leading-relaxed line-clamp-3">{nextEvent.description}</p>
                 <div className="mb-8">
                   <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Event Starts In</p>
-                  <div className="flex justify-center lg:justify-start">
-                    <Countdown targetDate={nextEvent.targetDate} colorTheme="purple" />
-                  </div>
+                  <div className="flex justify-center lg:justify-start"><Countdown targetDate={nextEvent.targetDate} colorTheme="purple" /></div>
                 </div>
-
-                <Link 
-                  to={`/events/${nextEvent.slug}`} 
-                  className="w-full bg-brand-orange text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-500 transition-all shadow-xl hover:-translate-y-1 text-center inline-block"
-                >
-                  Register Now
-                </Link>
+                <Link to={`/events/${nextEvent.slug}`} className="w-full bg-brand-orange text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-500 transition-all shadow-xl hover:-translate-y-1 text-center inline-block">Register Now</Link>
               </div>
             </div>
           </div>
@@ -207,23 +180,17 @@ export default function Home() {
             <img 
               src="https://res.cloudinary.com/izxlyyn5/image/upload/w_800,q_auto,f_auto/v1793961854/photo_6012415557241606481_y.jpg" 
               alt="Indispensables Teens" 
+              loading="lazy"
+              decoding="async"
               className="rounded-[2rem] shadow-xl w-full h-[400px] md:h-[500px] object-cover object-top border-4 border-white"
             />
           </div>
           <div className="md:w-1/2 text-center md:text-left">
             <h2 className="text-brand-orange font-bold uppercase tracking-widest text-sm mb-3">Welcome Home</h2>
-            <h3 className="text-3xl md:text-5xl font-extrabold text-brand-purple mb-6 leading-[1.15]">
-              A Place Where Teens <br className="hidden md:block"/> Belong, Grow, and Thrive
-            </h3>
-            <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-              We are the Teen Affairs ministry of the Redeemed Christian Church of God, Ondo Province 11. Our heartbeat is to see every teenager discover their God-given purpose and walk in it.
-            </p>
-            <p className="text-gray-600 mb-10 text-lg leading-relaxed">
-              Whether you are looking to make new friends, grow in your faith, or find a place to serve, there is a home for you here.
-            </p>
-            <Link to="/about" className="inline-flex items-center gap-2 text-brand-purple font-bold text-lg hover:text-brand-orange transition-colors">
-              Learn more about us <span>&rarr;</span>
-            </Link>
+            <h3 className="text-3xl md:text-5xl font-extrabold text-brand-purple mb-6 leading-[1.15]">A Place Where Teens <br className="hidden md:block"/> Belong, Grow, and Thrive</h3>
+            <p className="text-gray-600 mb-6 text-lg leading-relaxed">We are the Teen Affairs ministry of the Redeemed Christian Church of God, Ondo Province 11. Our heartbeat is to see every teenager discover their God-given purpose and walk in it.</p>
+            <p className="text-gray-600 mb-10 text-lg leading-relaxed">Whether you are looking to make new friends, grow in your faith, or find a place to serve, there is a home for you here.</p>
+            <Link to="/about" className="inline-flex items-center gap-2 text-brand-purple font-bold text-lg hover:text-brand-orange transition-colors">Learn more about us <span>&rarr;</span></Link>
           </div>
         </div>
       </section>
@@ -272,6 +239,7 @@ export default function Home() {
                   <p className="leading-relaxed">To raise disciples thoroughly equipped for the work of ministry through the teaching of God's Word, by precept and practice.</p>
                 </li>
                 <li className="flex gap-4">
+                  <span className="font-bold text-brand-orange text-xl mt-1">3.</span>
                   <p className="leading-relaxed"><strong className="text-white">Indispensables Teens Global Pursuit:</strong> Our vision is to pursue these objectives faithfully until every nation in the world is reached by the Lord Jesus Christ.</p>
                 </li>
               </ul>
