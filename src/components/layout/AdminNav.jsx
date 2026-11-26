@@ -9,13 +9,13 @@ export default function AdminNav() {
   const allLinks = [
     { to: '/admin', label: 'Overview', end: true, presidencyOnly: true },
     { to: '/admin/events', label: 'Manage Events', presidencyOnly: true },
-    { to: '/admin/plans', label: 'Event Plans', presidencyOnly: false }, // Coordinators can see
-    { to: '/admin/finance', label: 'Finance', presidencyOnly: true },
-    { to: '/admin/reports', label: 'Reports', presidencyOnly: false }, // Coordinators can see
+    { to: '/admin/plans', label: 'Event Plans', presidencyOnly: false }, 
+    { to: '/admin/finance', label: 'Finance', presidencyOnly: false }, 
+    { to: '/admin/reports', label: 'Reports', presidencyOnly: false }, 
     { to: '/admin/complaints', label: 'Complaints', presidencyOnly: true },
     { to: '/admin/partners', label: 'Partners', presidencyOnly: true },
-    { to: '/admin/registrations', label: 'Registrations', presidencyOnly: false }, // Coordinators can see
-    { to: '/admin/biodata', label: 'Bio-Data', presidencyOnly: false }, // Coordinators can see
+    { to: '/admin/registrations', label: 'Registrations', presidencyOnly: false }, 
+    { to: '/admin/biodata', label: 'Bio-Data', presidencyOnly: false }, 
     { to: '/admin/executives', label: 'Executives', presidencyOnly: true },
     { to: '/admin/departments', label: 'Departments', presidencyOnly: true },
     { to: '/admin/content', label: 'Edit History', presidencyOnly: true },
@@ -23,8 +23,8 @@ export default function AdminNav() {
 
   const linksToShow = allLinks.filter(link => {
     if (isPresidency) return true; 
-    if (isCoordinator) return !link.presidencyOnly; // Coordinators only see the "false" links
-    return !link.presidencyOnly; // Reg HODs see the "false" links
+    if (isCoordinator) return !link.presidencyOnly; 
+    return !link.presidencyOnly; 
   });
 
   return (
