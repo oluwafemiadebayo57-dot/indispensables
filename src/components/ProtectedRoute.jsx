@@ -8,12 +8,14 @@ export default function ProtectedRoute({ roles = [], department = null }) {
   if (loading) return <Spinner full />;
   if (!user) return <Navigate to="/login" replace />;
   
-  // 1. Check if their role is allowed
-  if (roles.length && !roles.includes(user.role)) return <Navigate to="/" replace />;
+  // Check if their role is in the allowed list
+  if (roles.length && !roles.includes(user.role)) {
+    console.log(`Access Denied. Role: ${user.role}, Allowed: ${roles.join(', ')}`);
+    return <Navigate to="/" replace />;
+  }
   
-  // 2. Check if a specific department is required
+  // Check department restriction if applicable
   if (department && user.role !== 'presidency' && user.departmentId !== department) {
-    // If they are an executive but not in this department, kick them to their portal
     return <Navigate to="/portal/reports" replace />;
   }
 

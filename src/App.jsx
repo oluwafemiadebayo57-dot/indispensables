@@ -44,6 +44,7 @@ export default function App() {
       <HashRouter>
         <Suspense fallback={<Spinner full />}>
           <Routes>
+            {/* PUBLIC ROUTES */}
             <Route element={<Layout />}>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
@@ -60,6 +61,7 @@ export default function App() {
 
             <Route path="/login" element={<Login />} />
 
+            {/* EXECUTIVE PORTAL */}
             <Route element={<ProtectedRoute roles={['executive', 'presidency']} />}>
               <Route element={<Layout />}>
                 <Route path="/portal/reports" element={<MyReports />} />
@@ -72,13 +74,14 @@ export default function App() {
               </Route>
             </Route>
 
-            {/* ADMIN ROUTES: Accessible to Coordinators, Reg HODs, and Presidency */}
+            {/* SHARED ADMIN ROUTES (Includes Coordinators) */}
             <Route element={<ProtectedRoute roles={['reg_admin', 'presidency', 'executive', 'coordinator']} />}>
               <Route element={<Layout />}>
                 <Route path="/admin/registrations" element={<Registrations />} />
                 <Route path="/admin/biodata" element={<Biodata />} />
                 <Route path="/admin/reports" element={<Reports />} />
                 <Route path="/admin/plans" element={<PlansAdmin />} />
+                <Route path="/admin/finance" element={<FinanceAdmin />} /> {/* <-- ADDED HERE */}
               </Route>
             </Route>
 
@@ -87,7 +90,6 @@ export default function App() {
               <Route element={<Layout />}>
                 <Route path="/admin" element={<Dashboard />} />
                 <Route path="/admin/events" element={<EventsAdmin />} />
-                <Route path="/admin/finance" element={<FinanceAdmin />} />
                 <Route path="/admin/reports/generate" element={<ReportGenerate />} />
                 <Route path="/admin/complaints" element={<ComplaintsAdmin />} />
                 <Route path="/admin/partners" element={<PartnersAdmin />} />
