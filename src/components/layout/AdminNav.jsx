@@ -28,9 +28,13 @@ export default function AdminNav() {
   });
 
   return (
-    <div className="bg-gray-100 border-b border-gray-200 mb-8 sticky top-[72px] z-30 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 overflow-x-auto">
-        <nav className="flex gap-6 py-4">
+    <div className="bg-gray-100 border-b border-gray-200 mb-8 sticky top-[72px] z-30 shadow-sm w-full">
+      {/* 
+        This container allows ONLY the navigation to scroll on mobile. 
+        The scrollbar is hidden for a cleaner look.
+      */}
+      <div className="max-w-7xl mx-auto overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+        <nav className="flex gap-6 py-4 px-4 min-w-max">
           {linksToShow.map((link) => (
             <NavLink key={link.to} to={link.to} end={link.end}
               className={({ isActive }) =>
